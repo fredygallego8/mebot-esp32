@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeBot | Panel de Pruebas Debug</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: var(--card);
+            backdrop-filter: blur(12px);
+            padding: 3rem;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+        .back-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.8rem;
+            border-radius: 12px;
+            color: var(--text);
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .back-btn:hover {
+            background: var(--primary);
+            transform: translateX(-3px);
+        }
+        h1 { margin: 0; font-size: 1.8rem; }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+        #results {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: left;
+            font-size: 0.9rem;
+            min-height: 100px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #10b981;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/bridge/hub.html" class="back-btn" title="Volver al Hub">←</a>
+            <h1>Panel de Pruebas</h1>
+        </div>
+        
+        <div class="controls">
+            <button onclick="testConnection()">Probar Conexión</button>
+            <button onclick="refreshStatus()">Actualizar Estado</button>
+        </div>
+
+        <div id="results">Esperando interacción...</div>
+    </div>
+
+    <script>
+        async function testConnection() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '✅ Conexión OK<br><br>' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('results').innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+        
+        async function refreshStatus() {
+            try {
+                const response = await fetch('/stats');
+                const data = await response.json();
+                const sessions = data.sessions_active || 0;
+                const status = sessions > 0 ? 'Conectado' : 'Desconectado';
+                document.getElementById('results').innerHTML = 
+                    `📊 Estado: ${status}\n` +
+                    `🔗 Sesiones: ${sessions}\n` +
+                    `📦 Datos:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('results').innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

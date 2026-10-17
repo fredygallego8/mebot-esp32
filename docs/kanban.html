@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeBot — Kanban Board</title>
+<style>
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--surface3:#21262d;
+  --border:#30363d;--border2:#444c56;
+  --green:#3fb950;--green-bg:#0d2a18;--green-dim:#238636;
+  --blue:#58a6ff;--blue-bg:#0a1f35;--blue-dim:#1f6feb;
+  --yellow:#d29922;--yellow-bg:#211d0a;--yellow-dim:#b08800;
+  --red:#f85149;--red-bg:#1a0a0a;--red-dim:#8b1a1a;
+  --purple:#bc8cff;--purple-bg:#1e1035;--purple-dim:#6e40c9;
+  --orange:#ffa657;--orange-bg:#1f1409;
+  --text:#e6edf3;--muted:#8b949e;--muted2:#6e7681;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;}
+
+/* TOP NAV */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:.65rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:1rem;}
+.logo{font-size:1.05rem;font-weight:700;color:var(--text);}
+.logo span{color:var(--blue);}
+.nav-link{color:var(--muted);text-decoration:none;font-size:.82rem;padding:.3rem .6rem;border-radius:6px;transition:all .15s;}
+.nav-link:hover{background:var(--surface2);color:var(--text);}
+.sprint-badge{background:var(--blue-bg);border:1px solid var(--blue-dim);color:var(--blue);font-size:.72rem;padding:.2rem .6rem;border-radius:20px;font-weight:600;}
+
+/* HEADER */
+.header{padding:1.5rem 1.5rem .5rem;max-width:1600px;margin:0 auto;}
+.header h1{font-size:1.4rem;color:var(--text);margin-bottom:.3rem;}
+.header p{color:var(--muted);font-size:.83rem;}
+
+/* SPRINT STATS */
+.stats{display:flex;gap:.75rem;flex-wrap:wrap;padding:.75rem 1.5rem 1rem;max-width:1600px;margin:0 auto;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.7rem 1.1rem;display:flex;align-items:center;gap:.75rem;min-width:150px;}
+.stat-icon{font-size:1.4rem;}
+.stat-val{font-size:1.3rem;font-weight:700;line-height:1;}
+.stat-label{font-size:.68rem;color:var(--muted);margin-top:.1rem;}
+
+/* PROGRESS BAR GLOBAL */
+.global-bar{margin:.25rem 1.5rem .5rem;max-width:1600px;}
+.gbar-head{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:.35rem;}
+.gbar-track{background:var(--surface2);border-radius:20px;height:10px;overflow:hidden;display:flex;}
+.gbar-seg{height:100%;transition:width .4s;}
+
+/* COLUMNS */
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem;padding:.5rem 1.5rem 2rem;max-width:1600px;margin:0 auto;align-items:start;}
+@media(max-width:1100px){.board{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:620px){.board{grid-template-columns:1fr;}}
+
+.col{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.col-header{padding:.8rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.col-title{display:flex;align-items:center;gap:.5rem;font-size:.88rem;font-weight:700;}
+.col-count{font-size:.7rem;padding:.15rem .45rem;border-radius:20px;font-weight:700;}
+.col-body{padding:.65rem;display:flex;flex-direction:column;gap:.6rem;}
+
+/* CARDS */
+.card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;overflow:hidden;transition:transform .15s,box-shadow .15s;}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.4);}
+.card-top{padding:.7rem .85rem .5rem;border-left:3px solid;}
+.card-icon-row{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.4rem;}
+.card-icon{font-size:1.3rem;line-height:1;}
+.card-badges{display:flex;gap:.3rem;flex-wrap:wrap;justify-content:flex-end;}
+.badge{font-size:.6rem;padding:.1rem .38rem;border-radius:20px;font-weight:700;white-space:nowrap;}
+.card-title{font-size:.85rem;font-weight:700;color:var(--text);line-height:1.35;margin-bottom:.2rem;}
+.card-desc{font-size:.74rem;color:var(--muted);line-height:1.5;margin-bottom:.4rem;}
+.card-body{padding:0 .85rem .75rem;}
+
+/* SUBTASKS */
+.subtasks{list-style:none;padding:0;margin:.3rem 0;}
+.subtask{display:flex;align-items:flex-start;gap:.45rem;padding:.22rem 0;font-size:.75rem;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.04);}
+.subtask:last-child{border-bottom:none;}
+.subtask.done{color:var(--muted2);}
+.subtask.done .st-text{text-decoration:line-through;opacity:.6;}
+.st-icon{font-size:.75rem;min-width:14px;margin-top:.05rem;}
+.st-text{flex:1;line-height:1.4;}
+
+/* CARD PROGRESS */
+.card-prog{margin:.5rem .85rem .7rem;background:var(--surface3);border-radius:20px;height:5px;overflow:hidden;}
+.card-prog-bar{height:100%;border-radius:20px;transition:width .4s;}
+
+/* CARD FOOTER */
+.card-footer{padding:.45rem .85rem;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.3rem;}
+.card-meta{display:flex;gap:.5rem;align-items:center;font-size:.67rem;color:var(--muted2);}
+.card-tags{display:flex;gap:.3rem;flex-wrap:wrap;}
+.tag{font-size:.62rem;padding:.08rem .35rem;border-radius:20px;background:var(--surface3);color:var(--muted);border:1px solid var(--border);}
+
+/* BLOCKER NOTICE */
+.blocker{background:#1a0a0a;border:1px solid var(--red-dim);border-radius:7px;padding:.5rem .7rem;margin:.4rem 0;font-size:.74rem;color:var(--red);display:flex;gap:.4rem;align-items:flex-start;}
+
+/* DIAGRAM */
+.diagram{background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:.8rem;margin:.6rem 0;font-size:.7rem;font-family:'JetBrains Mono','Courier New',monospace;color:var(--muted);white-pre;overflow-x:auto;line-height:1.6;}
+
+/* COLUMN COLORS */
+.col-done .col-header{background:rgba(35,134,54,.08);}
+.col-done .col-title{color:var(--green);}
+.col-done .col-count{background:var(--green-bg);color:var(--green);}
+.col-wip .col-header{background:rgba(31,111,235,.08);}
+.col-wip .col-title{color:var(--blue);}
+.col-wip .col-count{background:var(--blue-bg);color:var(--blue);}
+.col-todo .col-header{background:rgba(176,136,0,.08);}
+.col-todo .col-title{color:var(--yellow);}
+.col-todo .col-count{background:var(--yellow-bg);color:var(--yellow);}
+.col-blocked .col-header{background:rgba(139,26,26,.08);}
+.col-blocked .col-title{color:var(--red);}
+.col-blocked .col-count{background:var(--red-bg);color:var(--red);}
+
+/* SECTION DIVIDER */
+.section-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);padding:.3rem .85rem .15rem;margin-top:.3rem;}
+
+/* DONUT CHART */
+.donut-wrap{padding:.9rem 1.5rem;max-width:1600px;margin:0 auto;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;}
+.donut-svg{flex-shrink:0;}
+.donut-legend{display:flex;flex-direction:column;gap:.4rem;}
+.dl-item{display:flex;align-items:center;gap:.5rem;font-size:.78rem;}
+.dl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+footer{text-align:center;color:var(--muted2);font-size:.72rem;padding:1.5rem;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">Me<span>Bot</span> ESP32</div>
+    <a class="nav-link" href="mebot_system.html">← Arquitectura</a>
+    <a class="nav-link" href="kanban.html" style="background:var(--surface2);color:var(--text);">Kanban</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:.75rem;">
+    <span class="sprint-badge">Sprint D16 · 04 May 2026</span>
+    <span style="font-size:.75rem;color:var(--muted);">v2.4.2+b34</span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>🚀 Estabilización de Red & Sensibilidad</h1>
+  <p>M5Stack CoreS3 · mebot-bridge · Red Local 10.119.4.90 · Estatus: Conectado (v2.4.2)</p>
+</div>
+
+<!-- SPRINT STATS -->
+<div class="stats">
+  <div class="stat"><span class="stat-icon">✅</span><div><div class="stat-val">17</div><div class="stat-label">Completadas</div></div></div>
+  <div class="stat"><span class="stat-icon">⚡</span><div><div class="stat-val">3</div><div class="stat-label">En Progreso</div></div></div>
+  <div class="stat"><span class="stat-icon">📋</span><div><div class="stat-val">2</div><div class="stat-label">Pendientes</div></div></div>
+  <div class="stat"><span class="stat-icon">🎯</span><div><div class="stat-val">90%</div><div class="stat-label">Sprint Done</div></div></div>
+</div>
+
+<!-- PROGRESS BAR GLOBAL -->
+<div class="global-bar">
+  <div class="gbar-head"><span>Progreso Total del Proyecto</span><span>85%</span></div>
+  <div class="gbar-track">
+    <div class="gbar-seg" style="width:85%;background:var(--green-dim);"></div>
+    <div class="gbar-seg" style="width:10%;background:var(--blue-dim);"></div>
+  </div>
+</div>
+
+<div class="board">
+
+  <!-- ═══════════════════════════════ DONE ═══════════════════════════════ -->
+  <div class="col col-done">
+    <div class="col-header">
+      <div class="col-title">✅ Completado</div>
+      <span class="col-count">14</span>
+    </div>
+    <div class="col-body">
+
+      <!-- CARD: Flash + End-to-End -->
+      <div class="card">
+        <div class="card-top" style="border-color:var(--green);">
+          <div class="card-icon-row">
+            <div class="card-icon">🚀</div>
+            <div class="card-badges">
+              <span class="badge" style="background:var(--green-bg);color:var(--green);">D8-D10</span>
+            </div>
+          </div>
+          <div class="card-title">Handshake & Audio Clear</div>
+          <div class="card-desc">Protocolo BP3 activo, audio 24kHz fluyendo y flujo STT-LLM-TTS verificado.</div>
+        </div>
+        <div class="card-body">
+          <ul class="subtasks">
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">BinaryProtocol3 activo en OTA (version:3)</span></li>
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">Speaker fix (350ms delay) implementado</span></li>
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">LCD Chat bubbles LVGL funcionales</span></li>
+          </ul>
+        </div>
+        <div class="card-prog"><div class="card-prog-bar" style="width:100%;background:var(--green-dim);"></div></div>
+      </div>
+
+      <!-- CARD: Bridge Persistente -->
+      <div class="card">
+        <div class="card-top" style="border-color:var(--green);">
+          <div class="card-icon-row">
+            <div class="card-icon">🔒</div>
+            <div class="card-badges">
+              <span class="badge" style="background:var(--green-bg);color:var(--green);">D11</span>
+            </div>
+          </div>
+          <div class="card-title">Bridge Persistente (systemd)</div>
+          <div class="card-desc">Bridge operando 24/7 como servicio del sistema con auto-restart.</div>
+        </div>
+        <div class="card-body">
+          <ul class="subtasks">
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">mebot-bridge.service activo</span></li>
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">Logs rotativos journald</span></li>
+          </ul>
+        </div>
+        <div class="card-prog"><div class="card-prog-bar" style="width:100%;background:var(--green-dim);"></div></div>
+      </div>
+
+      <!-- CARD: Infraestructura de Red -->
+      <div class="card">
+        <div class="card-top" style="border-color:var(--green);">
+          <div class="card-icon-row">
+            <div class="card-icon">🌐</div>
+            <div class="card-badges">
+              <span class="badge" style="background:var(--green-bg);color:var(--green);">D15-16</span>
+            </div>
+          </div>
+          <div class="card-title">Red Dinámica & Firewall</div>
+          <div class="card-desc">Detección de IP local (ignora VPN) y apertura de puerto 16000 en UFW.</div>
+        </div>
+        <div class="card-body">
+          <ul class="subtasks">
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">Apertura Puerto 16000 (Priority 3)</span></li>
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">Detección Automática IP 10.119.x.x</span></li>
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">OTA Handshake exitoso</span></li>
+          </ul>
+        </div>
+        <div class="card-prog"><div class="card-prog-bar" style="width:100%;background:var(--green-dim);"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ IN PROGRESS ═══════════════════════════════ -->
+  <div class="col col-wip">
+    <div class="col-header">
+      <div class="col-title">⚡ En Progreso</div>
+      <span class="col-count">2</span>
+    </div>
+    <div class="col-body">
+
+      <!-- CARD: Calidad de Audio -->
+      <div class="card">
+        <div class="card-top" style="border-color:var(--blue);">
+          <div class="card-icon-row">
+            <div class="card-icon">🎤</div>
+            <div class="card-badges">
+              <span class="badge" style="background:var(--blue-bg);color:var(--blue);">D16</span>
+            </div>
+          </div>
+          <div class="card-title">Sensibilidad & Ganancia</div>
+          <div class="card-desc">Ajuste de ganancia de micrófono (30->50) y umbral VAD (0.04->0.015).</div>
+        </div>
+        <div class="card-body">
+          <ul class="subtasks">
+            <li class="subtask"><span class="st-icon">⏳</span><span class="st-text">Deploy v2.4.2 (Gain 50)</span></li>
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">VAD Sensitivity: 0.015</span></li>
+          </ul>
+        </div>
+        <div class="card-prog"><div class="card-prog-bar" style="width:60%;background:var(--blue-dim);"></div></div>
+      </div>
+
+      <!-- CARD: Documentation -->
+      <div class="card">
+        <div class="card-top" style="border-color:var(--blue);">
+          <div class="card-icon-row">
+            <div class="card-icon">📄</div>
+            <div class="card-badges">
+              <span class="badge" style="background:var(--blue-bg);color:var(--blue);">HOY</span>
+            </div>
+          </div>
+          <div class="card-title">Documentación Final</div>
+          <div class="card-desc">Actualización de manuales técnicos y guía de arquitectura para el cliente.</div>
+        </div>
+        <div class="card-body">
+          <ul class="subtasks">
+            <li class="subtask done"><span class="st-icon">✅</span><span class="st-text">mebot_system.html actualizado</span></li>
+            <li class="subtask"><span class="st-icon">⏳</span><span class="st-text">Guía de usuario final</span></li>
+          </ul>
+        </div>
+        <div class="card-prog"><div class="card-prog-bar" style="width:80%;background:var(--blue-dim);"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ TODO ═══════════════════════════════ -->
+  <div class="col col-todo">
+    <div class="col-header">
+      <div class="col-title">📋 Pendiente</div>
+      <span class="col-count">3</span>
+    </div>
+    <div class="col-body">
+
+      <!-- CARD: Post-Launch Support -->
+      <div class="card">
+        <div class="card-top" style="border-color:var(--yellow);">
+          <div class="card-icon-row">
+            <div class="card-icon">🛠️</div>
+            <div class="card-badges">
+              <span class="badge" style="background:var(--yellow-bg);color:var(--yellow);">D16+</span>
+            </div>
+          </div>
+          <div class="card-title">Monitorización & Soporte</div>
+          <div class="card-desc">Dashboards de salud en tiempo real para flota de dispositivos.</div>
+        </div>
+        <div class="card-body">
+          <ul class="subtasks">
+            <li class="subtask"><span class="st-icon">📋</span><span class="st-text">Alertas automáticas Telegram</span></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ BLOCKED ═══════════════════════════════ -->
+  <div class="col col-blocked">
+    <div class="col-header">
+      <div class="col-title">🔴 Bloqueado</div>
+      <span class="col-count">1</span>
+    </div>
+    <div class="col-body">
+      <div class="blocker">
+        <span>⚠️</span>
+        <div>
+          <strong>404 en Hub Central</strong>
+          <p>El usuario reporta "Not Found" en /hub. Verificado localmente OK, posible caché o proxy externo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>MeBot ESP32 &nbsp;·&nbsp; Kanban Board &nbsp;·&nbsp; Sprint D15/19 &nbsp;·&nbsp; Antigravity AI / NativoERP &nbsp;·&nbsp; 28 Abr 2026</footer>
+
+</body>
+</html>

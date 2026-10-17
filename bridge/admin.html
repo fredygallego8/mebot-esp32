@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeBot AI — Master Hub ESP32 v2.8.0</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            /* Identidad mebot.online */
+            --bg: #0F172A; /* Azul noche profundo */
+            --card-bg: rgba(30, 41, 59, 0.4);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #3B82F6; /* Azul brillante tecnológico */
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --success: #10B981;
+            --warning: #facc15;
+            --danger: #EF4444;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --yellow-face: #FDE047; /* Amarillo intenso para el bot */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Auras (Efecto Master Hub) */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -20%; left: -10%; width: 60%; height: 60%;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 60%);
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.4;
+        }
+
+        .glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transition: border-color 0.3s ease;
+        }
+        
+        .glass:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header Premium */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 99px;
+            border: 1px solid var(--card-border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        /* SVG Logo MeBot */
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brand-text h1 {
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            text-transform: uppercase;
+        }
+        .brand-text span.accent {
+            color: var(--primary);
+        }
+
+        .brand-text p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Navigation */
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary);
+        }
+
+        /* Dashboard Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: auto 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Avatar Face (Central) */
+        .avatar-container {
+            grid-column: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            position: relative;
+        }
+
+        /* ── Avatar size v2.5 (35% larger) ─────────────────────────── */
+        .yellow-face-wrapper {
+            position: relative;
+            width: 380px;
+            height: 340px;
+            perspective: 1000px;
+        }
+
+        .yellow-face {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #fef08a, var(--yellow-face));
+            border-radius: 95px;
+            box-shadow: 
+                0 30px 60px -15px rgba(253, 224, 71, 0.2),
+                inset 0 -15px 30px rgba(202, 138, 4, 0.3),
+                inset 0 10px 20px rgba(255, 255, 255, 0.8);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            border: 5px solid #eab308;
+        }
+
+        .face-inner {
+            width: 240px;
+            height: 160px;
+            position: relative;
+        }
+
+        .eye {
+            width: 38px;
+            height: 68px;
+            background: #1e293b;
+            border-radius: 28px;
+            position: absolute;
+            top: 14px;
+            transition: all 0.1s;
+        }
+        .eye.left { left: 28px; }
+        .eye.right { right: 28px; }
+
+        .mouth {
+            width: 54px;
+            height: 16px;
+            background: #1e293b;
+            border-radius: 28px;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .state-badge {
+            margin-top: 2rem;
+            padding: 0.75rem 2rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 99px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Estilos de tarjetas */
+        .card {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-family: 'Fira Code', monospace;
+            color: var(--primary);
+            margin-top: 0.5rem;
+        }
+
+        /* Logs (Bottom Area) */
+        .logs-area {
+            grid-column: 1 / -1;
+            height: 250px;
+            background: #020617;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .log-line {
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .log-time { color: #64748b; }
+        .log-info { color: #38bdf8; }
+        .log-warn { color: #facc15; }
+        .log-err { color: #f87171; }
+
+        /* Controles */
+        .btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn.primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 10px 20px -10px var(--primary-glow);
+        }
+        .btn.primary:hover {
+            background: #2563EB;
+        }
+
+        .btn.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        .btn.danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Inputs */
+        input[type="number"], input[type="text"], select {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: white;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+        label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .avatar-container { grid-column: 1; padding: 2rem 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <a href="hub.html" style="color: var(--text-muted); transition: color 0.3s;" title="Volver al Hub">
+                    <i data-lucide="arrow-left" size="20"></i>
+                </a>
+                <div class="brand-logo">
+                    <!-- SVG Logo MeBot Original -->
+                    <!-- MeBot AI Face Logo SVG -->
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="25" y="30" width="50" height="40" rx="12" fill="#3B82F6" />
+                        <circle cx="38" cy="45" r="4" fill="#0F172A" />
+                        <circle cx="62" cy="45" r="4" fill="#0F172A" />
+                        <path d="M 40 58 Q 50 65 60 58" stroke="#0F172A" stroke-width="3" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>Me<span class="accent">Bot</span></h1>
+                    <p>ESP32 Bridge v2.8.0</p>
+                </div>
+            </div>
+            
+            <nav class="nav-links">
+                <a href="/br/admin" class="active">Dashboard</a>
+                <a href="/br/fleet">Fleet Manager</a>
+                <a href="/br/docs/kanban.html">Kanban</a>
+            </nav>
+
+            <div class="status-badge" id="conn-status">
+                <div class="status-dot"></div>
+                <span id="conn-text">CONECTANDO</span>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            
+            <!-- Left: Telemetry -->
+            <div class="card glass">
+                <div class="card-header">
+                    <i data-lucide="activity" size="16"></i> Pipeline Metrics
+                </div>
+                
+                <div class="stat-group">
+                    <div class="stat-value" id="stat-sessions">0</div>
+                    <div class="stat-label">SESSIONS_ACTIVE</div>
+                </div>
+                
+                <div class="stat-group">
+                    <div class="stat-value" id="stat-stt">0</div>
+                    <div class="stat-label">STT_PROCESSED</div>
+                </div>
+
+                <div class="stat-group">
+                    <div class="stat-value" id="stat-llm">0</div>
+                    <div class="stat-label">LLM_COMPLETIONS</div>
+                </div>
+
+                <div class="stat-group" style="margin-bottom: 0;">
+                    <div class="stat-value" id="stat-tts">0</div>
+                    <div class="stat-label">TTS_FRAMES_SENT</div>
+                </div>
+                
+                <div class="stat-group">
+                    <div class="stat-value" id="stat-noise" style="font-size: 1rem;">0.000</div>
+                    <div class="stat-label">NOISE_FLOOR (RMS)</div>
+                </div>
+
+                <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--card-border);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-family: 'Fira Code'; font-size: 0.75rem; color: var(--text-muted);">UPTIME</span>
+                        <span id="uptime-display" style="font-family: 'Fira Code'; font-size: 0.75rem; font-weight: bold;">00:00:00</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.5); border-radius: 2px;">
+                        <div id="uptime-progress" style="height: 100%; background: var(--primary); border-radius: 2px; width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: The Avatar -->
+            <div class="avatar-container">
+                <div class="yellow-face-wrapper" id="face-wrapper">
+                    <div class="yellow-face" id="bot-face">
+                        <div class="face-inner">
+                            <div class="eye left" id="eye-l"></div>
+                            <div class="eye right" id="eye-r"></div>
+                            <div class="mouth" id="mouth"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="state-badge" id="bot-state">IDLE</div>
+            </div>
+
+            <!-- Right: Controls + WiFi Manager -->
+            <div class="card glass">
+                <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                    <button class="tab-btn active" data-tab="config" style="flex:1;background:var(--primary);border:none;color:white;padding:0.5rem;border-radius:8px;font-weight:700;font-size:0.75rem;cursor:pointer;text-transform:uppercase;letter-spacing:0.05em;">Config</button>
+                    <button class="tab-btn" data-tab="wifi" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--card-border);color:var(--text-muted);padding:0.5rem;border-radius:8px;font-weight:700;font-size:0.75rem;cursor:pointer;text-transform:uppercase;letter-spacing:0.05em;">WiFi</button>
+                </div>
+
+                <!-- Tab: Device Config -->
+                <div id="tab-config" class="tab-content">
+                    <div class="card-header"><i data-lucide="settings-2" size="16"></i> Device Config</div>
+                    <form id="config-form">
+                        <label>VAD Energy Threshold</label>
+                        <input type="number" step="0.001" id="cfg-vad-thresh" value="0.015">
+                        
+                        <label>Silence Timeout</label>
+                        <input type="number" id="cfg-vad-silence" value="15">
+                        
+                        <label>Volume</label>
+                        <input type="range" id="cfg-volume" min="0" max="100" value="80" style="width: 100%; margin-bottom: 1.5rem;">
+
+                        <button type="button" class="btn primary" onclick="saveConfig()">
+                            <i data-lucide="save" size="16"></i> Sync Config
+                        </button>
+                    </form>
+
+                    <div class="card-header" style="margin-top: 2rem;">
+                        <i data-lucide="terminal" size="16"></i> Remote Actions
+                    </div>
+                    <button class="btn" onclick="sendCommand('test_tts')">
+                        <i data-lucide="volume-2" size="16"></i> Test Audio
+                    </button>
+                    <button class="btn danger" onclick="sendCommand('reset')">
+                        <i data-lucide="refresh-cw" size="16"></i> Reboot Hardware
+                    </button>
+                </div>
+
+                <!-- Tab: WiFi Manager -->
+                <div id="tab-wifi" class="tab-content" style="display:none;">
+                    <div class="card-header"><i data-lucide="wifi" size="16"></i> WiFi Manager</div>
+                    
+                    <!-- Current status -->
+                    <div id="wifi-status" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:1rem;">
+                        <span id="wifi-ssid" style="font-weight:600;font-size:0.85rem;">--</span>
+                        <span id="wifi-signal" style="font-size:0.7rem;color:var(--text-muted);">--</span>
+                    </div>
+
+                    <!-- Scan button + results -->
+                    <button class="btn" onclick="wifiScan()" id="btn-scan">
+                        <i data-lucide="search" size="16"></i> Scan Networks
+                    </button>
+                    <div id="wifi-scan-results" style="max-height:160px;overflow-y:auto;margin-bottom:0.75rem;display:none;"></div>
+
+                    <!-- Connect form -->
+                    <div id="wifi-connect-form" style="display:none;">
+                        <label>SSID</label>
+                        <input type="text" id="wifi-connect-ssid" readonly style="margin-bottom:0.5rem;">
+                        <label>Password</label>
+                        <input type="password" id="wifi-connect-password" placeholder="Contraseña WiFi">
+                        <button class="btn primary" onclick="wifiConnect()" style="font-size:0.75rem;">
+                            <i data-lucide="plug" size="14"></i> Connect
+                        </button>
+                    </div>
+
+                    <!-- Saved networks -->
+                    <div class="card-header" style="margin-top:1rem;">
+                        <i data-lucide="archive" size="14"></i> Saved Networks
+                    </div>
+                    <button class="btn" onclick="wifiSaved()" style="font-size:0.75rem;padding:0.5rem;">
+                        <i data-lucide="refresh-cw" size="12"></i> Refresh
+                    </button>
+                    <div id="wifi-saved-list" style="max-height:100px;overflow-y:auto;font-family:'Fira Code';font-size:0.7rem;"></div>
+                </div>
+            </div>
+
+            <!-- Bottom: Terminal -->
+            <!-- Conversation Transcript -->
+            <div class="card glass" style="grid-column: 1 / -1; max-height: 200px; overflow-y: auto; margin-bottom: 0;" id="transcript-card">
+                <div class="card-header">
+                    <i data-lucide="message-square" size="16"></i> Transcript <span style="font-size:0.7rem;color:var(--text-muted);font-weight:normal;" id="transcript-count">(0)</span>
+                </div>
+                <div id="transcript-area" style="font-family:'Fira Code';font-size:0.75rem;line-height:1.6;">
+                    <div style="color:var(--text-muted);text-align:center;padding:1rem;">Esperando conversaciones...</div>
+                </div>
+            </div>
+
+            <!-- Bottom: Terminal -->
+            <div class="logs-area" id="log-area">
+                <div class="log-line">
+                    <span class="log-time">[BOOT]</span>
+                    <span class="log-info">Inicializando MeBot IoT Gateway GUI...</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Global State
+        const state = {
+            ip: window.location.hostname || "127.0.0.1",
+            port: window.location.port || "16000",
+            lastLogs: "",
+            prevStats: { stt_ok: 0, tts_frames_sent: 0 },
+            isSpeaking: false,
+            isThinking: false
+        };
+
+        const apiBase = `${window.location.protocol}//${state.ip}:${state.port}`;
+        const ipEl = document.getElementById('ip-display');
+        if (ipEl) ipEl.textContent = `Node: ${state.ip}:${state.port}`;
+
+        // ==========================================
+        // AVATAR ENGINE (Carita Amarilla)
+        // ==========================================
+        const face = document.getElementById('bot-face');
+        const faceWrapper = document.getElementById('face-wrapper');
+        const eyeL = document.getElementById('eye-l');
+        const eyeR = document.getElementById('eye-r');
+        const mouth = document.getElementById('mouth');
+        const stateBadge = document.getElementById('bot-state');
+
+        function setFaceState(mode) {
+            stateBadge.textContent = mode.toUpperCase();
+            if (mode === 'idle') {
+                face.style.boxShadow = '0 30px 60px -15px rgba(253, 224, 71, 0.2), inset 0 -15px 30px rgba(202, 138, 4, 0.3), inset 0 10px 20px rgba(255, 255, 255, 0.8)';
+                stateBadge.style.color = 'var(--text-muted)';
+                stateBadge.style.borderColor = 'var(--card-border)';
+            } else if (mode === 'listening') {
+                face.style.boxShadow = '0 0 80px rgba(16, 185, 129, 0.4), inset 0 -15px 30px rgba(202, 138, 4, 0.3)';
+                stateBadge.style.color = 'var(--success)';
+                stateBadge.style.borderColor = 'var(--success)';
+                // Ojos abiertos
+                eyeL.style.transform = 'scale(1.2)';
+                eyeR.style.transform = 'scale(1.2)';
+                mouth.style.height = '16px';
+                mouth.style.width = '24px';
+            } else if (mode === 'thinking') {
+                face.style.boxShadow = '0 0 80px rgba(59, 130, 246, 0.6), inset 0 -15px 30px rgba(202, 138, 4, 0.3)';
+                stateBadge.style.color = 'var(--primary)';
+                stateBadge.style.borderColor = 'var(--primary)';
+                // Mirar arriba
+                eyeL.style.transform = 'translate(10px, -15px)';
+                eyeR.style.transform = 'translate(10px, -15px)';
+                mouth.style.width = '10px';
+                mouth.style.height = '10px';
+            } else if (mode === 'speaking') {
+                face.style.boxShadow = '0 0 80px rgba(250, 204, 21, 0.5), inset 0 -15px 30px rgba(202, 138, 4, 0.3)';
+                stateBadge.style.color = 'var(--warning)';
+                stateBadge.style.borderColor = 'var(--warning)';
+            } else if (mode === 'offline') {
+                face.style.filter = 'grayscale(100%) brightness(0.5)';
+                stateBadge.style.color = 'var(--danger)';
+                stateBadge.style.borderColor = 'var(--danger)';
+                eyeL.style.height = '4px'; eyeR.style.height = '4px';
+                mouth.style.height = '4px'; mouth.style.width = '60px';
+            }
+        }
+
+        function randomBlink() {
+            if (state.isThinking || stateBadge.textContent === 'OFFLINE') return;
+            eyeL.style.transform = 'scaleY(0.1)';
+            eyeR.style.transform = 'scaleY(0.1)';
+            setTimeout(() => {
+                eyeL.style.transform = 'scaleY(1)';
+                eyeR.style.transform = 'scaleY(1)';
+            }, 150);
+            setTimeout(randomBlink, Math.random() * 4000 + 2000);
+        }
+
+        function randomLook() {
+            if (state.isThinking || state.isSpeaking || stateBadge.textContent === 'OFFLINE') return;
+            const lookX = (Math.random() - 0.5) * 15;
+            const lookY = (Math.random() - 0.5) * 5;
+            eyeL.style.transform = `translate(${lookX}px, ${lookY}px)`;
+            eyeR.style.transform = `translate(${lookX}px, ${lookY}px)`;
+            
+            // Efecto 3D en la cara
+            faceWrapper.style.transform = `rotateY(${lookX}deg) rotateX(${-lookY}deg)`;
+
+            setTimeout(() => {
+                eyeL.style.transform = `translate(0, 0)`;
+                eyeR.style.transform = `translate(0, 0)`;
+                faceWrapper.style.transform = `rotateY(0deg) rotateX(0deg)`;
+            }, 1000 + Math.random() * 2000);
+            setTimeout(randomLook, Math.random() * 5000 + 3000);
+        }
+
+        function simulateSpeech() {
+            if (!state.isSpeaking) {
+                mouth.style.height = '12px';
+                mouth.style.width = '40px';
+                return;
+            }
+            const h = Math.random() * 35 + 10;
+            const w = Math.random() * 20 + 20;
+            mouth.style.height = `${h}px`;
+            mouth.style.width = `${w}px`;
+            mouth.style.borderRadius = `${h}px`;
+            setTimeout(simulateSpeech, 120);
+        }
+
+        // Init animations
+        setTimeout(randomBlink, 1000);
+        setTimeout(randomLook, 2000);
+
+        // ==========================================
+        // DATA FETCHING & LOGIC
+        // ==========================================
+        async function fetchStats() {
+            try {
+                const res = await fetch(`${apiBase}/stats`);
+                const data = await res.json();
+                
+                document.getElementById('stat-sessions').textContent = data.sessions_active;
+                document.getElementById('stat-stt').textContent = data.stt_ok;
+                document.getElementById('stat-llm').textContent = data.llm_ok;
+                document.getElementById('stat-tts').textContent = data.tts_frames_sent;
+
+                // Uptime
+                const hours = Math.floor(data.uptime_s / 3600);
+                const mins = Math.floor((data.uptime_s % 3600) / 60);
+                const secs = data.uptime_s % 60;
+                document.getElementById('uptime-display').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                document.getElementById('uptime-progress').style.width = `${Math.min(100, (data.uptime_s / 86400) * 100)}%`;
+
+                // Connection badge
+                document.getElementById('status-text').textContent = 'ONLINE';
+                document.getElementById('conn-badge').style.background = 'rgba(16, 185, 129, 0.1)';
+                face.style.filter = 'none';
+
+                // Avatar State Logic
+                if (data.tts_frames_sent > state.prevStats.tts_frames_sent) {
+                    if (!state.isSpeaking) {
+                        state.isSpeaking = true;
+                        state.isThinking = false;
+                        setFaceState('speaking');
+                        simulateSpeech();
+                    }
+                } else {
+                    if (state.isSpeaking) {
+                        state.isSpeaking = false;
+                        setFaceState('idle');
+                    }
+                }
+
+                // If STT changed recently, assume listening/thinking
+                if (data.stt_ok > state.prevStats.stt_ok && !state.isSpeaking) {
+                    state.isThinking = true;
+                    setFaceState('thinking');
+                    setTimeout(() => { state.isThinking = false; if(!state.isSpeaking) setFaceState('idle'); }, 2000);
+                }
+
+                state.prevStats = { stt_ok: data.stt_ok, tts_frames_sent: data.tts_frames_sent };
+
+            } catch (err) {
+                const statusEl = document.getElementById('status-text');
+                const badgeEl = document.getElementById('conn-badge');
+                if (statusEl) statusEl.textContent = 'OFFLINE';
+                if (badgeEl) badgeEl.style.background = 'rgba(239, 68, 68, 0.2)';
+                setFaceState('offline');
+            }
+        }
+
+        async function fetchLogs() {
+            try {
+                const res = await fetch(`${apiBase}/logs?lines=30`);
+                const text = await res.text();
+                if (text === state.lastLogs) return;
+                
+                const logArea = document.getElementById('log-area');
+                const lines = text.split('\n');
+                
+                logArea.innerHTML = lines.map(line => {
+                    if(!line.trim()) return '';
+                    let typeClass = 'log-info';
+                    if (line.includes('ERROR')) typeClass = 'log-err';
+                    if (line.includes('WARNING')) typeClass = 'log-warn';
+                    
+                    // Extraer timestamp si existe
+                    let timeStr = "";
+                    let msgStr = line;
+                    const match = line.match(/^\[(.*?)\]/);
+                    if(match) {
+                        timeStr = `[${match[1]}]`;
+                        msgStr = line.substring(match[0].length);
+                    } else {
+                        const date = new Date();
+                        timeStr = `[${date.toLocaleTimeString()}]`;
+                    }
+
+                    return `<div class="log-line"><span class="log-time">${timeStr}</span> <span class="${typeClass}">${msgStr}</span></div>`;
+                }).join('');
+
+                logArea.scrollTop = logArea.scrollHeight;
+                state.lastLogs = text;
+            } catch (err) {
+                // silencioso
+            }
+        }
+
+        async function sendCommand(cmd) {
+            try {
+                const res = await fetch(`${apiBase}/esp32/command`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ command: cmd })
+                });
+                const data = await res.json();
+                alert(data.message || data.error);
+            } catch (err) {
+                alert("Error enviando comando");
+            }
+        }
+
+        async function saveConfig() {
+            const vad = {
+                vad_energy_thresh: parseFloat(document.getElementById('cfg-vad-thresh').value),
+                vad_silence_frames: parseInt(document.getElementById('cfg-vad-silence').value)
+            };
+            try {
+                await fetch(`${apiBase}/config/vad`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(vad)
+                });
+                const vol = parseInt(document.getElementById('cfg-volume').value);
+                await fetch(`${apiBase}/config/volume`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ volume: vol })
+                });
+                alert("Configuración sincronizada exitosamente con el ESP32.");
+            } catch (err) {
+                alert("Error guardando config: " + err.message);
+            }
+        }
+
+        // T1: WebSocket push en vez de polling
+        function connectAdminWS() {
+            const isProd = window.location.host.includes("mebot.online");
+            const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const wsPath = isProd ? "/esp32/ws/admin" : "/ws/admin";
+            const hostUrl = isProd ? window.location.host : `${state.ip}:${state.port}`;
+            const wsUrl = `${proto}//${hostUrl}${wsPath}`;
+            let ws = new WebSocket(wsUrl);
+            ws.onmessage = (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    document.getElementById('stat-sessions').textContent = data.sessions_active;
+                    document.getElementById('stat-stt').textContent = data.stt_ok;
+                    document.getElementById('stat-llm').textContent = data.llm_ok;
+                    document.getElementById('stat-tts').textContent = data.tts_frames_sent;
+
+                    const hours = Math.floor(data.uptime_s / 3600);
+                    const mins = Math.floor((data.uptime_s % 3600) / 60);
+                    const secs = data.uptime_s % 60;
+                    document.getElementById('uptime-display').textContent = 
+                        `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    document.getElementById('uptime-progress').style.width = `${Math.min(100, (data.uptime_s / 86400) * 100)}%`;
+
+                    document.getElementById('conn-text').textContent = 'ONLINE';
+                    document.getElementById('conn-status').style.background = 'rgba(16, 185, 129, 0.1)';
+                    document.getElementById('conn-status').style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                    face.style.filter = 'none';
+
+                            // Update noise floor + adaptive threshold
+                    if (data.vad && data.vad.energy_thresh) {
+                        document.getElementById('stat-noise').textContent = data.vad.energy_thresh.toFixed(4);
+                    }
+
+                    // Avatar State Logic
+                    if (data.tts_frames_sent > state.prevStats.tts_frames_sent) {
+                        if (!state.isSpeaking) {
+                            state.isSpeaking = true;
+                            state.isThinking = false;
+                            setFaceState('speaking');
+                            simulateSpeech();
+                        }
+                    } else {
+                        if (state.isSpeaking) {
+                            state.isSpeaking = false;
+                            setFaceState('idle');
+                        }
+                    }
+
+                    if (data.stt_ok > state.prevStats.stt_ok && !state.isSpeaking) {
+                        state.isThinking = true;
+                        setFaceState('thinking');
+                        setTimeout(() => { state.isThinking = false; if(!state.isSpeaking) setFaceState('idle'); }, 2000);
+                    }
+
+                    state.prevStats = { stt_ok: data.stt_ok, tts_frames_sent: data.tts_frames_sent };
+                } catch(e) {}
+            };
+            ws.onclose = () => {
+                setTimeout(connectAdminWS, 3000);
+            };
+        }
+
+        // T6: Poll conversation log
+        let lastTranscriptCount = 0;
+        async function fetchTranscript() {
+            try {
+                const res = await fetch(`${apiBase}/debug`);
+                const data = await res.json();
+                // Show active session info as transcript
+                const sessions = data.active_sessions || [];
+                document.getElementById('transcript-count').textContent = `(${sessions.length} active)`;
+                
+                const area = document.getElementById('transcript-area');
+                if (sessions.length === 0) {
+                    area.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:1rem;">Sin sesiones activas</div>';
+                    return;
+                }
+                
+                area.innerHTML = sessions.map(s => `
+                    <div style="display:flex;gap:0.5rem;padding:0.3rem 0;border-bottom:1px solid rgba(255,255,255,0.03);">
+                        <span style="color:var(--primary);font-weight:bold;min-width:5ch;">${s.session_id}</span>
+                        <span style="color:var(--text-muted);">${s.state || 'connected'}</span>
+                        ${s.noise_floor ? `<span style="color:var(--warning);font-size:0.65rem;">NF:${s.noise_floor.toFixed(3)}</span>` : ''}
+                        ${s.multiturn ? `<span style="color:var(--success);font-size:0.65rem;">MULTI</span>` : ''}
+                        <span style="color:var(--text-muted);font-size:0.65rem;">${s.ip}</span>
+                    </div>
+                `).join('');
+            } catch(e) {}
+        }
+
+        // ==========================================
+        // TAB SWITCHING (Device Config / WiFi)
+        // ==========================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.style.background = 'rgba(255,255,255,0.05)';
+                    b.style.borderColor = 'var(--card-border)';
+                    b.style.color = 'var(--text-muted)';
+                });
+                this.style.background = 'var(--primary)';
+                this.style.borderColor = 'var(--primary)';
+                this.style.color = 'white';
+                document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+                document.getElementById('tab-' + this.dataset.tab).style.display = 'block';
+            });
+        });
+
+        // ==========================================
+        // WiFi MANAGER
+        // ==========================================
+        async function wifiFetchStatus() {
+            try {
+                const res = await fetch(`${apiBase}/api/wifi/status`);
+                const data = await res.json();
+                document.getElementById('wifi-ssid').textContent = data.ssid || 'Desconectado';
+                document.getElementById('wifi-signal').textContent = data.signal || '--';
+            } catch(e) {}
+        }
+
+        async function wifiScan() {
+            const btn = document.getElementById('btn-scan');
+            const results = document.getElementById('wifi-scan-results');
+            const form = document.getElementById('wifi-connect-form');
+            btn.innerHTML = '<i data-lucide="loader" size="16"></i> Escaneando...';
+            btn.disabled = true;
+            results.style.display = 'block';
+            results.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:0.5rem;">Escaneando...</div>';
+
+            try {
+                const res = await fetch(`${apiBase}/api/wifi/scan`);
+                const data = await res.json();
+                const aps = data.aps || [];
+                if (aps.length === 0) {
+                    results.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:0.5rem;">Sin redes encontradas</div>';
+                } else {
+                    results.innerHTML = aps.sort((a,b) => b.rssi - a.rssi).map(ap => `
+                        <div onclick="selectWifi('${ap.ssid.replace(/'/g, "\\'")}')" 
+                             style="display:flex;justify-content:space-between;padding:0.4rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.2s;border-radius:4px;"
+                             onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+                             onmouseout="this.style.background='transparent'">
+                            <span style="font-size:0.75rem;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ap.ssid}</span>
+                            <span style="font-size:0.65rem;color:var(--text-muted);">${ap.rssi}dBm ${ap.auth !== 'OPEN' ? '🔒' : ''}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) {
+                results.innerHTML = '<div style="color:var(--danger);padding:0.5rem;">Error de conexión</div>';
+            }
+            btn.innerHTML = '<i data-lucide="search" size="16"></i> Scan Networks';
+            btn.disabled = false;
+            lucide.createIcons();
+        }
+
+        function selectWifi(ssid) {
+            document.getElementById('wifi-connect-ssid').value = ssid;
+            document.getElementById('wifi-connect-password').value = '';
+            document.getElementById('wifi-connect-form').style.display = 'block';
+        }
+
+        async function wifiConnect() {
+            const ssid = document.getElementById('wifi-connect-ssid').value;
+            const password = document.getElementById('wifi-connect-password').value;
+            if (!ssid) return;
+            try {
+                const res = await fetch(`${apiBase}/api/wifi/connect`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ ssid, password })
+                });
+                const data = await res.json();
+                alert(data.message || 'Conectado');
+                document.getElementById('wifi-connect-form').style.display = 'none';
+                setTimeout(wifiFetchStatus, 3000);
+            } catch(e) {
+                alert('Error de conexión');
+            }
+        }
+
+        async function wifiSaved() {
+            try {
+                const res = await fetch(`${apiBase}/api/wifi/saved`);
+                const data = await res.json();
+                const saved = data.saved || [];
+                const list = document.getElementById('wifi-saved-list');
+                if (saved.length === 0) {
+                    list.innerHTML = '<div style="color:var(--text-muted);padding:0.3rem;">Sin redes guardadas</div>';
+                } else {
+                    list.innerHTML = saved.map(s => `
+                        <div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid rgba(255,255,255,0.03);">
+                            <span style="font-size:0.7rem;">${s.ssid}</span>
+                            <span onclick="wifiDelete(${s.index})" style="color:var(--danger);cursor:pointer;font-size:0.65rem;">✕</span>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) {}
+        }
+
+        async function wifiDelete(index) {
+            try {
+                await fetch(`${apiBase}/api/wifi/delete`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ index })
+                });
+                wifiSaved();
+            } catch(e) {}
+        }
+
+        // Init
+        connectAdminWS();
+        setInterval(fetchLogs, 1500);
+        setInterval(fetchTranscript, 5000);
+        setInterval(wifiFetchStatus, 10000);
+        fetchTranscript();
+        fetchStats();
+        wifiFetchStatus();
+        wifiSaved();
+    </script>
+</body>
+</html>

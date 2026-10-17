@@ -1,0 +1,18 @@
+[Unit]
+Description=MeBot Audio Bridge — ESP32 WebSocket STT+LLM+TTS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=user
+WorkingDirectory=/home/user/Escritorio/pro26/bot_stacks_erp/mebot_stack/bot-agent/voiceiot/mebot-esp32/bridge
+EnvironmentFile=/home/user/Escritorio/pro26/bot_stacks_erp/mebot_stack/bot-agent/voiceiot/mebot-esp32/bridge/.env
+ExecStart=/usr/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 16000 --log-level warning
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

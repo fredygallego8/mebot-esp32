@@ -1,0 +1,5 @@
+key,type,encoding,value
+wifi,namespace,,
+ssid,data,string,Pconte568u2
+password,data,string,poco54321
+ota_url,data,string,http://10.243.80.90:16000/esp32/ota/

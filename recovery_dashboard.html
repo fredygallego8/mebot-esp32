@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeBot ESP32 Recovery Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;family=Outfit:wght@300;400;600;800&amp;display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#6366f1;--bg:#0f172a;--card:rgba(30,41,59,.7);--text:#f8fafc;
+  --dim:#94a3b8;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);
+  display:flex;flex-direction:column;align-items:center;min-height:100vh;
+  padding:2rem 1rem;}
+header{width:100%;max-width:980px;margin-bottom:2rem;display:flex;align-items:center;gap:1rem;}
+header h1{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;}
+.badge{display:inline-block;background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.3);
+  padding:.35rem .75rem;border-radius:999px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--primary);margin-left:auto;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:1.25rem;width:100%;max-width:980px;}
+.card{background:var(--card);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;padding:1.75rem;box-shadow:0 20px 50px rgba(0,0,0,.35);transition:transform .15s ease;}
+.card:hover{transform:translateY(-2px);}
+.card h2{font-size:1rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.6rem;}
+.card h2 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--primary);}
+.card p.desc{font-size:.85rem;color:var(--dim);margin-bottom:1.25rem;line-height:1.5;}
+.steps{display:flex;flex-direction:column;gap:.6rem;}
+.step{display:flex;align-items:center;gap:.75rem;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.05);
+  padding:.85rem 1rem;border-radius:14px;font-size:.92rem;line-height:1.45;}
+.step-num{min-width:28px;min-height:28px;background:var(--primary);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;flex-shrink:0;}
+.step strong{font-weight:600;display:block;font-size:.92rem;}
+.step span{color:var(--dim);font-size:.82rem;}
+.actions{margin-top:1.25rem;display:flex;gap:.6rem;flex-wrap:wrap;}
+.btn{background:var(--primary);color:#fff;border:none;padding:.75rem 1.1rem;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:.4rem;}
+.btn:hover{opacity:.92;transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.35);}
+.btn.outline{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);}
+.btn.small{padding:.5rem .75rem;font-size:.75rem;}
+.result{background:#050b14;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:1.1rem;margin-top:.75rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;color:#e2e8f0;white-space:pre-wrap;word-break:break-word;line-height:1.55;min-height:60px;}
+.ok{color:var(--ok);font-weight:700;}
+.warn{color:var(--warn);font-weight:700;}
+.err{color:var(--err);font-weight:700;}
+.note{margin-top:.6rem;font-size:.78rem;color:var(--dim);line-height:1.45;}
+.note code{background:rgba(255,255,255,.06);padding:.1rem .35rem;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:#e2e8f0;}
+.grid-two{grid-template-columns:1fr 1fr;}
+@media(max-width:900px){.grid{grid-template-columns:1fr;}.grid-two{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <a href="/bridge/hub.html" style="text-decoration:none;color:inherit;font-size:1.4rem;line-height:1;" title="Volver al Hub">←</a>
+  <h1>Panel de Recuperación ESP32</h1>
+  <span class="badge">Dashboard HTML</span>
+</header>
+
+<div class="grid">
+  <!-- Card 1: Estado inicial -->
+  <div class="card">
+    <h2><span class="dot"></span>Estado del dispositivo</h2>
+    <p class="desc">Verifica si el M5Stack CoreS3 está conectado antes de cualquier operación. Si el LED verde solo se enciende mientras presionas botones y se apaga al soltarlos, el chip está en modo bootloader o con fallas tempranas.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <strong>Conecta por USB</strong> <span>Usa el cable USB-C → USB que viene con el M5Stack CoreS3.</span>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <strong>Verifica el puerto</strong> <span>Ejecuta: <code>ls /dev/ttyACM*</code> en la terminal.</span>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <strong>Comprueba permisos</strong> <span>Tu usuario debe estar en el grupo <code>dialout</code>.</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn small" onclick="window.open('javascript:console.log(\'Ejecuta en terminal: ls -l /dev/ttyACM*\')')">📋 Ver puertos</button>
+      <button class="btn small outline" onclick="alert('Ejecuta: groups $(whoami) | grep dialout')">👥 Ver grupos</button>
+    </div>
+    <div class="note">Si el LED verde se mantiene encendido solo mientras mantienes presionado un botón, es un síntoma de que el firmware no mantiene el latch de energía (posible bootloop o error temprano).</div>
+  </div>
+
+  <!-- Card 2: Modo descarga -->
+  <div class="card">
+    <h2><span class="dot" style="background:var(--warn);"></span>Modo de descarga</h2>
+    <p class="desc">Necesario para leer/escribir efuses o para flashear si el dispositivo no arranca. Mantén <strong>BOOT (BtnA)</strong> presionado, presiona y suelta <strong>EN (RST)</strong>, luego suelta <strong>BOOT</strong>.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <strong>Mantén presionado BOOT (BtnA)</strong> — botón izquierdo del frente o cerca del USB.
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <strong>Presiona y suelta EN (RST)</strong> — botón lateral pequeño o agujero de reset.
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <strong>Suelta BOOT (BtnA)</strong> — el LED debe mantenerse verde indicando modo descarga.
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="window.open('javascript:console.log(\'Modo descarga: BOOT+RST luego soltar BOOT. El LED debe mantenerse verde.\')')">🎯 Confirmar modo descarga</button>
+    </div>
+  </div>
+
+  <!-- Card 3: Efuses -->
+  <div class="card">
+    <h2><span class="dot" style="background:#f59e0b;"></span>Efuses (seguridad)</h2>
+    <p class="desc">Si compilaste con <strong>Secure Boot v2</strong> y <strong>Flash Encryption</strong> (como en <code>build_espanol.sh</code>), debes quemar los efuses correspondientes para que el chip reconozca estas características durante el arranque.</p>
+    <div class="steps">
+      <div class="step"><span class="step-num">A</span><strong>Leer efuses</strong> <code>espefuse.py -p /dev/ttyACM0 summary</code></div>
+      <div class="step"><span class="step-num">B</span><strong>Flash Encryption dev</strong> <code>idf.py efuse flash_encryption</code></div>
+      <div class="step"><span class="step-num">C</span><strong>Secure Boot v2</strong> <code>idf.py efuse secure_boot_v2_enable</code></div>
+    </div>
+    <div class="note"><strong>Nota crítica:</strong> Si los efuses no coinciden con la configuración del firmware (ej. compilado con Secure Boot pero efuse no quemado), el chip fallará inmediatamente al arrancar (bootloop), explicando el LED que se apaga al soltar botones.</div>
+  </div>
+
+  <!-- Card 4: Flasheo -->
+  <div class="card">
+    <h2><span class="dot" style="background:var(--primary);"></span>Flasheo completo</h2>
+    <p class="desc">Después de configurar los efuses, borra la flash y flashea de nuevo con los binarios firmados/cifrados generados por <code>build_espanol.sh</code>.</p>
+    <div class="steps">
+      <div class="step"><span class="step-num">1</span><strong>Borrar flash</strong> <code>idf.py -p /dev/ttyACM0 erase_flash</code></div>
+      <div class="step"><span class="step-num">2</span><strong>Flashear</strong> <code>idf.py -p /dev/ttyACM0 flash</code></div>
+      <div class="step"><span class="step-num">3</span><strong>Verificar</strong> El LED debe mantenerse encendido al soltar el botón de energía.</div>
+    </div>
+    <div class="actions">
+      <button class="btn outline small" onclick="alert('Ejecuta:\nsource ~/esp/esp-idf/export.sh && export IDF_PYTHON_ENV_PATH=/home/fredy/.espressif/python_env/idf5.5_py3.12_env && idf.py -p /dev/ttyACM0 erase_flash')">🧹 Borrar</button>
+      <button class="btn small" onclick="alert('Ejecuta: idf.py -p /dev/ttyACM0 flash')">⚡ Flashear</button>
+    </div>
+  </div>
+
+  <!-- Card 5: Recuperación rápida -->
+  <div class="card">
+    <h2><span class="dot" style="background:var(--err);"></span>Recuperación rápida</h2>
+    <p class="desc">Si el dispositivo no arranca ni en modo descarga, realiza esta secuencia completa para recuperar el ESP32-S3 sin importar el estado anterior.</p>
+    <div class="steps">
+      <div class="step"><span class="step-num">1</span><strong>Conecta USB</strong> — verifica <code>/dev/ttyACM0</code> existe.</div>
+      <div class="step"><span class="step-num">2</span><strong>Modo descarga</strong> — BOOT + EN (como en paso 2).</div>
+      <div class="step"><span class="step-num">3</span><strong>Burn efuses</strong> — <code>flash_encryption</code> → <code>secure_boot_v2_enable</code>.</div>
+      <div class="step"><span class="step-num">4</span><strong>Erase + Flash</strong> — borra y escribe de nuevo.</div>
+      <div class="step"><span class="step-num">5</span><strong>Reset físico</strong> — presiona EN para salir del bootloader.</div>
+      <div class="step"><span class="step-num">6</span><strong>Monitor</strong> — <code>idf.py -p /dev/ttyACM0 monitor</code> debe mostrar logs.</div>
+    </div>
+    <div class="note">Esta secuencia resuelve la mayoría de casos donde el LED solo se mantiene mientras se presionan botones (bootloop por efuses o flash corrupta).</div>
+  </div>
+
+  <!-- Card 6: Monitor / Logs -->
+  <div class="card">
+    <h2><span class="dot" style="background:#10b981;"></span>Monitor en vivo</h2>
+    <p class="desc">Después de flashear y hacer reset físico, usa el monitor para ver los logs de arranque. Deberías ver mensajes del sistema operativo ESP-IDF y luego la inicialización de los componentes.</p>
+    <div class="steps">
+      <div class="step"><span class="step-num">A</span><strong>Iniciar monitor</strong> <code>idf.py -p /dev/ttyACM0 monitor</code></div>
+      <div class="step"><span class="step-num">B</span><strong>Salir monitor</strong> Presiona <code>Ctrl+]</code> para salir.</div>
+    </div>
+    <div class="result" id="monitorLog">
+Esperando interacción con el dispositivo...
+Ejecuta los pasos anteriores para ver resultados en esta sección.
+    </div>
+    <div class="actions">
+      <button class="btn outline" onclick="document.getElementById('monitorLog').innerHTML='<span class=ok>✅</span> Comando: idf.py -p /dev/ttyACM0 monitor\nEjecuta en terminal para ver logs en vivo.'">▶ Monitor</button>
+    </div>
+  </div>
+</div>
+
+<footer style="margin-top:2.5rem;text-align:center;color:var(--dim);font-size:.8rem;">
+  <p>Dashboard adaptado de <code>test_panel.html</code> y scripts existentes (<code>flash_m5stack.sh</code>, <code>build_espanol.sh</code>, <code>connect_esp32.sh</code>)</p>
+  <p>Proyecto: mebot-esp32 / Stack: bot-agent / Usuario: fredy</p>
+</footer>
+</body>
+</html>
+
+<!-- Adaptación de scripts .sh existentes -->
+<!-- Scripts referenciados: flash_m5stack.sh (flasheo M5Stack con BOOT+RST), build_espanol.sh (config español + Secure Boot), connect_esp32.sh (checklist conexión), monitor_esp32_reconnection.sh (reconexión), logs.sh (monitoreo) -->
+
+<script>
+// Funciones para interactuar con flash_server.py (servidor local) o mostrar instrucciones si no está corriendo
+async function callRecovery(action) {
+    const btn = document.activeElement;
+    const resultEl = document.getElementById('monitorLog');
+    resultEl.textContent = 'Ejecutando ' + action + '...';
+    try {
+        const resp = await fetch('http://localhost:8888/', { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: 'action=' + action });
+        const data = await resp.json();
+        resultEl.innerHTML = '<span class="ok">✅ Resultado para ' + action + '</span>\n' + (data.output || 'Sin salida');
+    } catch (e) {
+        resultEl.innerHTML = '<span class="warn">⚠️ Servidor local no disponible.</span>\nEjecuta manualmente los pasos del dashboard o inicia el servidor con: python3 flash_server.py';
+    }
+}
+// Asignar eventos a los botones adicionales del dashboard
+window.addEventListener('load', () => {
+    document.querySelectorAll('.btn').forEach(b => {
+        if (b.textContent.includes('Borrar')) { b.addEventListener('click', () => callRecovery('erase_flash')); }
+        if (b.textContent.includes('Flashear')) { b.addEventListener('click', () => callRecovery('flash')); }
+        if (b.textContent.includes('Confirmar modo')) { b.addEventListener('click', () => callRecovery('status_port')); }
+    });
+});
+</script>

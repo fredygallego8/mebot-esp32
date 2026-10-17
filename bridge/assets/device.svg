@@ -1,0 +1,258 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 460" fill="none">
+  <defs>
+    <!-- Screen gradient - realistic display glow -->
+    <linearGradient id="screenGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#060f1c"/>
+    </linearGradient>
+
+    <!-- Body gradient - dark gray plastic with 3D depth -->
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3a3d42"/>
+      <stop offset="25%" stop-color="#2d2f33"/>
+      <stop offset="60%" stop-color="#222428"/>
+      <stop offset="100%" stop-color="#1a1c1f"/>
+    </linearGradient>
+
+    <!-- Body edge highlight -->
+    <linearGradient id="bodyEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.06)"/>
+      <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.15)"/>
+    </linearGradient>
+
+    <!-- Button gradient -->
+    <linearGradient id="btnGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4a4d54"/>
+      <stop offset="50%" stop-color="#383b40"/>
+      <stop offset="100%" stop-color="#2a2c30"/>
+    </linearGradient>
+
+    <!-- Button pressed -->
+    <radialGradient id="btnShadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="60%" stop-color="rgba(0,0,0,0)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.4)"/>
+    </radialGradient>
+
+    <!-- Speaker grill gradient -->
+    <linearGradient id="grillGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1c1f"/>
+      <stop offset="100%" stop-color="#121316"/>
+    </linearGradient>
+
+    <!-- USB-C port gradient -->
+    <linearGradient id="usbGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#121316"/>
+      <stop offset="100%" stop-color="#0a0b0d"/>
+    </linearGradient>
+
+    <!-- Shadow for 3D depth -->
+    <filter id="deviceShadow">
+      <feDropShadow dx="4" dy="8" stdDeviation="16" flood-opacity="0.35" flood-color="#000"/>
+    </filter>
+
+    <filter id="innerShadow">
+      <feComponentTransfer in="SourceAlpha">
+        <feFuncA type="table" tableValues="1 0"/>
+      </feComponentTransfer>
+      <feGaussianBlur stdDeviation="4"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feFlood flood-color="#000" flood-opacity="0.5" result="color"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+      <feMerge>
+        <feMergeNode in="SourceGraphic"/>
+        <feMergeNode/>
+      </feMerge>
+    </filter>
+
+    <!-- Screen reflection -->
+    <linearGradient id="screenReflect" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.03)"/>
+      <stop offset="30%" stop-color="rgba(255,255,255,0)"/>
+      <stop offset="70%" stop-color="rgba(255,255,255,0)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>
+    </linearGradient>
+
+    <!-- MeBot screen content gradient -->
+    <radialGradient id="screenContent" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0%" stop-color="#1a2a4a"/>
+      <stop offset="100%" stop-color="#060f1c"/>
+    </radialGradient>
+
+    <!-- Glow filter for screen elements -->
+    <filter id="textGlow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Shadow on floor -->
+  <ellipse cx="210" cy="445" rx="145" ry="18" fill="rgba(0,0,0,0.25)" filter="url(#deviceShadow)"/>
+
+  <!-- === MAIN DEVICE BODY === -->
+  <!-- Back layer (slightly darker, creates 3D edge) -->
+  <rect x="68" y="25" width="285" height="400" rx="32" fill="#151619"/>
+
+  <!-- Main body -->
+  <rect x="65" y="22" width="285" height="400" rx="32" fill="url(#bodyGrad)" filter="url(#deviceShadow)"/>
+
+  <!-- Body edge highlight (top-left shine) -->
+  <rect x="65" y="22" width="285" height="400" rx="32" fill="url(#bodyEdge)"/>
+
+  <!-- Top edge highlight line -->
+  <rect x="85" y="22" width="245" height="2" rx="1" fill="rgba(255,255,255,0.08)"/>
+
+  <!-- Left edge highlight -->
+  <rect x="65" y="42" width="2" height="360" rx="1" fill="rgba(255,255,255,0.04)"/>
+
+  <!-- === FRONT BEZEL === -->
+  <rect x="78" y="35" width="259" height="375" rx="24" fill="#1e2024"/>
+  <rect x="80" y="37" width="255" height="371" rx="22" fill="#181a1d"/>
+
+  <!-- === SCREEN === -->
+  <rect x="92" y="62" width="231" height="310" rx="12" fill="url(#screenContent)"/>
+  <rect x="92" y="62" width="231" height="310" rx="12" fill="url(#screenGrad)"/>
+
+  <!-- Screen inner border -->
+  <rect x="92" y="62" width="231" height="310" rx="12" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- === SCREEN UI CONTENT - MeBot boot screen === -->
+  <!-- Status bar -->
+  <rect x="98" y="68" width="219" height="20" rx="4" fill="rgba(0,0,0,0.3)"/>
+  <circle cx="109" cy="78" r="3" fill="#22D3EE"/>
+  <text x="120" y="82" font-family="monospace" font-size="7" fill="#22D3EE" opacity="0.8">MeBot</text>
+  <text x="296" y="82" font-family="monospace" font-size="6" fill="rgba(255,255,255,0.3)" text-anchor="end">23:45</text>
+
+  <!-- WiFi icon -->
+  <path d="M278 72Q283 68 288 72" stroke="rgba(255,255,255,0.2)" stroke-width="1.2" fill="none"/>
+  <path d="M280 76Q283 73 286 76" stroke="rgba(255,255,255,0.2)" stroke-width="1.2" fill="none"/>
+  <circle cx="283" cy="79" r="1" fill="rgba(255,255,255,0.2)"/>
+
+  <!-- Battery icon -->
+  <rect x="300" y="72" width="12" height="7" rx="1" stroke="rgba(255,255,255,0.2)" stroke-width="0.6" fill="none"/>
+  <rect x="302" y="73.5" width="6" height="4" rx="0.5" fill="#10B981"/>
+  <rect x="312" y="74.5" width="1.5" height="2" rx="0.4" fill="rgba(255,255,255,0.2)"/>
+
+  <!-- Main UI - MeBot logo area -->
+  <rect x="115" y="108" width="185" height="60" rx="10" fill="rgba(99,102,241,0.08)" stroke="rgba(99,102,241,0.12)" stroke-width="0.5"/>
+  <text x="207" y="135" font-family="sans-serif" font-size="18" font-weight="900" fill="#F8FAFC" text-anchor="middle" letter-spacing="1">MeBot</text>
+  <text x="207" y="153" font-family="monospace" font-size="7" fill="#6366F1" text-anchor="middle" letter-spacing="2">v2.7.6+b206</text>
+
+  <!-- Status indicators -->
+  <rect x="115" y="185" width="185" height="40" rx="8" fill="rgba(0,0,0,0.2)"/>
+
+  <!-- Status dots -->
+  <circle cx="130" cy="205" r="3" fill="#F59E0B"/>
+  <text x="139" y="208" font-family="monospace" font-size="7" fill="#94A3B8">WiFi</text>
+  <circle cx="177" cy="205" r="3" fill="#10B981"/>
+  <text x="186" y="208" font-family="monospace" font-size="7" fill="#94A3B8">NVS</text>
+  <circle cx="220" cy="205" r="3" fill="#22D3EE"/>
+  <text x="229" y="208" font-family="monospace" font-size="7" fill="#94A3B8">Audio</text>
+  <circle cx="268" cy="205" r="3" fill="#6366F1"/>
+  <text x="277" y="208" font-family="monospace" font-size="7" fill="#94A3B8">OTA</text>
+
+  <!-- Signal wave -->
+  <path d="M115 240 Q130 225 145 240 Q160 225 175 240 Q190 225 205 240 Q220 225 235 240 Q250 225 265 240 Q280 225 300 240" stroke="rgba(99,102,241,0.15)" stroke-width="1" fill="none"/>
+  <path d="M125 250 Q140 240 155 250 Q170 240 185 250 Q200 240 215 250 Q230 240 245 250 Q260 240 280 250" stroke="rgba(34,211,238,0.1)" stroke-width="1" fill="none"/>
+
+  <!-- Bottom controls -->
+  <rect x="115" y="295" width="55" height="22" rx="6" fill="rgba(99,102,241,0.1)" stroke="rgba(99,102,241,0.2)" stroke-width="0.5"/>
+  <text x="142" y="310" font-family="monospace" font-size="7" fill="#6366F1" text-anchor="middle">FLASH</text>
+
+  <rect x="178" y="295" width="55" height="22" rx="6" fill="rgba(16,185,129,0.1)" stroke="rgba(16,185,129,0.2)" stroke-width="0.5"/>
+  <text x="205" y="310" font-family="monospace" font-size="7" fill="#10B981" text-anchor="middle">CONFIG</text>
+
+  <rect x="241" y="295" width="55" height="22" rx="6" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.2)" stroke-width="0.5"/>
+  <text x="268" y="310" font-family="monospace" font-size="7" fill="#F59E0B" text-anchor="middle">MONITOR</text>
+
+  <!-- Screen reflection overlay -->
+  <rect x="92" y="62" width="231" height="310" rx="12" fill="url(#screenReflect)"/>
+
+  <!-- === IR TRANSMITTER (top center) === -->
+  <circle cx="207" cy="48" r="6" fill="#2a2c30" stroke="#222428" stroke-width="0.5"/>
+  <circle cx="207" cy="48" r="3" fill="#3a3d44"/>
+  <circle cx="207" cy="48" r="1.5" fill="#4a4d54"/>
+  <rect x="206" y="44" width="2" height="2" rx="0.5" fill="rgba(255,255,255,0.05)"/>
+
+  <!-- === MICROPHONE HOLES (top left) === -->
+  <circle cx="100" cy="48" r="1" fill="#121316"/>
+  <circle cx="106" cy="48" r="1" fill="#121316"/>
+  <circle cx="112" cy="48" r="1" fill="#121316"/>
+  <circle cx="118" cy="48" r="1" fill="#121316"/>
+  <circle cx="124" cy="48" r="1" fill="#121316"/>
+
+  <!-- === BUTTONS (left side) === -->
+
+  <!-- Button A (top) -->
+  <rect x="48" y="110" width="17" height="38" rx="5" fill="url(#btnGrad)"/>
+  <rect x="49" y="111" width="15" height="36" rx="4" fill="url(#btnShadow)"/>
+  <rect x="48" y="110" width="17" height="38" rx="5" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+  <rect x="50" y="112" width="13" height="2" rx="1" fill="rgba(255,255,255,0.04)"/>
+  <text x="56" y="145" font-family="sans-serif" font-size="5" fill="rgba(255,255,255,0.12)" text-anchor="middle">A</text>
+
+  <!-- Button B (middle) -->
+  <rect x="48" y="192" width="17" height="38" rx="5" fill="url(#btnGrad)"/>
+  <rect x="49" y="193" width="15" height="36" rx="4" fill="url(#btnShadow)"/>
+  <rect x="48" y="192" width="17" height="38" rx="5" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+  <rect x="50" y="194" width="13" height="2" rx="1" fill="rgba(255,255,255,0.04)"/>
+  <text x="56" y="227" font-family="sans-serif" font-size="5" fill="rgba(255,255,255,0.12)" text-anchor="middle">B</text>
+
+  <!-- Button C (bottom) -->
+  <rect x="48" y="274" width="17" height="38" rx="5" fill="url(#btnGrad)"/>
+  <rect x="49" y="275" width="15" height="36" rx="4" fill="url(#btnShadow)"/>
+  <rect x="48" y="274" width="17" height="38" rx="5" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+  <rect x="50" y="276" width="13" height="2" rx="1" fill="rgba(255,255,255,0.04)"/>
+  <text x="56" y="309" font-family="sans-serif" font-size="5" fill="rgba(255,255,255,0.12)" text-anchor="middle">C</text>
+
+  <!-- Button labels on body -->
+  <text x="38" y="133" font-family="sans-serif" font-size="5" fill="rgba(255,255,255,0.06)" text-anchor="end">BTN</text>
+
+  <!-- === SPEAKER GRILLS (right side) === -->
+  <rect x="325" y="148" width="14" height="4" rx="1.5" fill="url(#grillGrad)"/>
+  <rect x="325" y="158" width="14" height="4" rx="1.5" fill="url(#grillGrad)"/>
+  <rect x="325" y="168" width="14" height="4" rx="1.5" fill="url(#grillGrad)"/>
+  <rect x="325" y="178" width="14" height="4" rx="1.5" fill="url(#grillGrad)"/>
+  <rect x="325" y="188" width="14" height="4" rx="1.5" fill="url(#grillGrad)"/>
+  <rect x="325" y="198" width="14" height="4" rx="1.5" fill="url(#grillGrad)"/>
+  <rect x="325" y="208" width="14" height="4" rx="1.5" fill="url(#grillGrad)"/>
+  <rect x="325" y="218" width="14" height="4" rx="1.5" fill="url(#grillGrad)"/>
+
+  <!-- Right side speaker cutout line -->
+  <rect x="337" y="140" width="2" height="90" rx="1" fill="rgba(0,0,0,0.3)"/>
+
+  <!-- === BOTTOM EDGE - USB-C PORT === -->
+  <!-- Bottom bevel -->
+  <rect x="72" y="422" width="271" height="6" rx="3" fill="#141518"/>
+
+  <!-- USB-C Port -->
+  <rect x="178" y="422" width="58" height="14" rx="3" fill="url(#usbGrad)"/>
+  <rect x="178" y="422" width="58" height="14" rx="3" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+
+  <!-- USB-C inner contact -->
+  <rect x="190" y="428" width="8" height="2" rx="0.5" fill="#6366F1" opacity="0.3"/>
+  <rect x="200" y="428" width="8" height="2" rx="0.5" fill="#6366F1" opacity="0.3"/>
+  <rect x="216" y="428" width="8" height="2" rx="0.5" fill="#6366F1" opacity="0.3"/>
+  <rect x="190" y="432" width="8" height="2" rx="0.5" fill="#6366F1" opacity="0.3"/>
+  <rect x="200" y="432" width="8" height="2" rx="0.5" fill="#6366F1" opacity="0.3"/>
+  <rect x="216" y="432" width="8" height="2" rx="0.5" fill="#6366F1" opacity="0.3"/>
+
+  <!-- USB label -->
+  <text x="207" y="412" font-family="monospace" font-size="5" fill="rgba(255,255,255,0.06)" text-anchor="middle">USB-C</text>
+
+  <!-- === POWER LED === -->
+  <circle cx="207" cy="395" r="2.5" fill="#10B981" opacity="0.8"/>
+  <circle cx="207" cy="395" r="2.5" fill="none" stroke="rgba(16,185,129,0.3)" stroke-width="0.5"/>
+  <circle cx="207" cy="395" r="1" fill="rgba(255,255,255,0.3)"/>
+
+  <!-- === BOTTOM MOUNTING HOLES === -->
+  <circle cx="103" cy="415" r="3" fill="#121316" stroke="rgba(255,255,255,0.03)" stroke-width="0.3"/>
+  <circle cx="311" cy="415" r="3" fill="#121316" stroke="rgba(255,255,255,0.03)" stroke-width="0.3"/>
+
+  <!-- === CORNER SCREWS === -->
+  <circle cx="88" cy="407" r="1.5" fill="#1e2024"/>
+  <circle cx="326" cy="407" r="1.5" fill="#1e2024"/>
+
+  <!-- === BACK MARKINGS (subtle) === -->
+  <text x="207" y="390" font-family="sans-serif" font-size="4" fill="rgba(255,255,255,0.03)" text-anchor="middle" font-weight="300">M5Stack CoreS3</text>
+</svg>

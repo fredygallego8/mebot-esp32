@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeBot AI — Fleet Dashboard v2.7.0</title>
+    <!-- Mismas fuentes y estilo base que admin.html -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0F172A;
+            --surface: rgba(30, 41, 59, 0.7);
+            --surface-hover: rgba(51, 65, 85, 0.9);
+            --border: rgba(148, 163, 184, 0.15);
+            --primary: #3B82F6;
+            --primary-hover: #2563EB;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .brand-text p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--primary);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            width: 100%;
+            box-sizing: border-box;
+            flex-grow: 1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .fleet-table-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(12px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: var(--surface-hover);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-connected { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-offline { background: var(--danger); }
+        .status-speaking { background: var(--warning); box-shadow: 0 0 8px var(--warning); animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-ota {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-ota:hover {
+            background: rgba(16, 185, 129, 0.25);
+        }
+
+        .empty-state {
+            padding: 4rem 2rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            opacity: 0.5;
+            margin-bottom: 1rem;
+        }
+
+        /* Navigation */
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="brand">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outer glow -->
+                <circle cx="50" cy="50" r="45" fill="#3B82F6" fill-opacity="0.2" />
+                <circle cx="50" cy="50" r="35" fill="#3B82F6" fill-opacity="0.4" />
+                <!-- Face base -->
+                <rect x="25" y="30" width="50" height="40" rx="12" fill="#FACC15" />
+                <!-- Eyes -->
+                <circle cx="38" cy="45" r="4" fill="#0F172A" />
+                <circle cx="62" cy="45" r="4" fill="#0F172A" />
+                <!-- Smile -->
+                <path d="M 40 58 Q 50 65 60 58" stroke="#0F172A" stroke-width="3" stroke-linecap="round" />
+            </svg>
+            <div class="brand-text">
+                <h1>MeBot ESP32</h1>
+                <p>Fleet Command Center v2.7.0</p>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="/br/admin">Dashboard Individual</a>
+            <a href="/br/fleet" class="active">Fleet Manager</a>
+            <a href="/br/docs/kanban.html">Kanban</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Dispositivos Activos</h3>
+                <div class="value" id="stat-active">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Interacciones (Pipeline)</h3>
+                <div class="value" id="stat-pipeline" style="color: var(--success);">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Sesiones Históricas</h3>
+                <div class="value" id="stat-total" style="color: var(--text-main);">0</div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin: 0; font-size: 1.25rem;">Dispositivos Conectados</h2>
+            <button class="btn btn-ota" style="padding: 0.6rem 1.2rem; font-weight: 600;" onclick="triggerMassOTA()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Actualizar Toda la Flota (OTA)
+            </button>
+        </div>
+
+        <div class="fleet-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Estado</th>
+                        <th>Device ID</th>
+                        <th>IP Local</th>
+                        <th>Uptime</th>
+                        <th>Firmware</th>
+                        <th>Actividad (RMS)</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="fleet-body">
+                    <!-- Dispositivos inyectados por JS -->
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            <p>Buscando dispositivos en la red...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal Configuración -->
+    <div id="config-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; width: 500px; max-width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+            <h2 style="margin-top: 0; color: var(--primary); font-size: 1.25rem;">Configuración de Identidad</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Dispositivo: <span id="modal-device-id" style="font-family: 'Fira Code'; color: var(--text-main);"></span></p>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Nombre del Bot</label>
+                <input type="text" id="modal-bot-name" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; padding: 0.75rem; border-radius: 8px; font-family: 'Inter'; box-sizing: border-box;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Identidad (System Prompt)</label>
+                <textarea id="modal-prompt" rows="4" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; padding: 0.75rem; border-radius: 8px; font-family: 'Inter'; box-sizing: border-box; resize: vertical;"></textarea>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Ej: "Eres una profesora de inglés nativa. Corrige mi pronunciación."</p>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Voz (Edge TTS)</label>
+                <select id="modal-voice" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; padding: 0.75rem; border-radius: 8px; font-family: 'Inter'; box-sizing: border-box;">
+                    <option value="es-MX-DaliaNeural">Dalia (Mujer - México)</option>
+                    <option value="es-MX-JorgeNeural">Jorge (Hombre - México)</option>
+                    <option value="es-ES-ElviraNeural">Elvira (Mujer - España)</option>
+                    <option value="es-ES-AlvaroNeural">Alvaro (Hombre - España)</option>
+                    <option value="es-CO-SalomeNeural">Salome (Mujer - Colombia)</option>
+                    <option value="es-CO-GonzaloNeural">Gonzalo (Hombre - Colombia)</option>
+                    <option value="en-US-JennyNeural">Jenny (Mujer - USA / Inglés)</option>
+                    <option value="en-US-GuyNeural">Guy (Hombre - USA / Inglés)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">🔑 Password del Dispositivo</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="password" id="modal-device-password" placeholder="Mínimo 4 caracteres" style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; padding: 0.75rem; border-radius: 8px; font-family: 'Inter'; box-sizing: border-box;">
+                    <button class="btn" style="width: auto; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border);" onclick="togglePassword()" title="Mostrar/Ocultar">👁️</button>
+                </div>
+                <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Este password protege el acceso a la configuración de este ESP32.</p>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button class="btn" style="background: transparent; border: 1px solid var(--border); color: var(--text-main);" onclick="closeModal()">Cancelar</button>
+                <button class="btn" onclick="saveConfig()">Guardar Perfil</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatUptime(seconds) {
+            if (seconds < 60) return seconds + 's';
+            if (seconds < 3600) return Math.floor(seconds/60) + 'm ' + (seconds%60) + 's';
+            return Math.floor(seconds/3600) + 'h ' + Math.floor((seconds%3600)/60) + 'm';
+        }
+
+        async function fetchFleet() {
+            try {
+                const res = await fetch('/api/fleet');
+                const data = await res.json();
+                
+                // Actualizar Stats
+                document.getElementById('stat-active').textContent = data.active.length;
+                document.getElementById('stat-pipeline').textContent = data.stats.pipelines_run;
+                document.getElementById('stat-total').textContent = data.stats.sessions_total;
+
+                // Actualizar Tabla
+                const tbody = document.getElementById('fleet-body');
+                if (data.active.length === 0) {
+                    tbody.innerHTML = \`
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            <p>No hay dispositivos conectados actualmente.</p>
+                        </td>
+                    </tr>\`;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                data.active.forEach(device => {
+                    const isSpeaking = device.vad_rms_last > 0.015;
+                    const statusClass = isSpeaking ? 'status-speaking' : 'status-connected';
+                    const statusText = isSpeaking ? 'Escuchando/Hablando' : 'Online';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = \`
+                        <td><span class="status-dot \${statusClass}"></span> \${statusText}</td>
+                        <td style="color: var(--primary)">\${device.device_id === '?' ? device.session_id : device.device_id}</td>
+                        <td>\${device.ip}</td>
+                        <td>\${formatUptime(device.uptime_s)}</td>
+                        <td><span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">\${device.fw_version}</span></td>
+                        <td>
+                            <div style="width: 100%; background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px;">
+                                <div style="width: \${Math.min(100, device.vad_rms_last * 1000)}%; background: \${isSpeaking ? 'var(--warning)' : 'var(--success)'}; height: 100%; transition: width 0.1s;"></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <button class="btn" style="background: rgba(255,255,255,0.1); padding: 0.4rem 0.6rem; font-size: 0.75rem;" onclick="openConfig('\${device.device_id}')">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                </button>
+                                <button class="btn btn-ota" style="padding: 0.4rem 0.6rem; font-size: 0.75rem;" onclick="triggerOTA('\${device.device_id}')">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                </button>
+                            </div>
+                        </td>
+                    \`;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Error fetching fleet data:", err);
+            }
+        }
+        
+        async function openConfig(deviceId) {
+            document.getElementById('modal-device-id').textContent = deviceId;
+            document.getElementById('modal-device-password').value = '';
+            document.getElementById('config-modal').style.display = 'flex';
+            
+            try {
+                const res = await fetch(`/api/devices/${deviceId}/config`);
+                const data = await res.json();
+                document.getElementById('modal-bot-name').value = data.bot_name || '';
+                document.getElementById('modal-prompt').value = data.system_prompt || '';
+                document.getElementById('modal-voice').value = data.tts_voice || 'es-MX-DaliaNeural';
+                // Show hint if password already set
+                if (data.device_password) {
+                    document.getElementById('modal-device-password').placeholder = '•••••• (dejar vacío para mantener)';
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('config-modal').style.display = 'none';
+        }
+        
+        function togglePassword() {
+            const pw = document.getElementById('modal-device-password');
+            pw.type = pw.type === 'password' ? 'text' : 'password';
+        }
+
+        async function saveConfig() {
+            const deviceId = document.getElementById('modal-device-id').textContent;
+            const payload = {
+                bot_name: document.getElementById('modal-bot-name').value,
+                system_prompt: document.getElementById('modal-prompt').value,
+                tts_voice: document.getElementById('modal-voice').value,
+            };
+            
+            try {
+                const res = await fetch(`/api/devices/${deviceId}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if(!res.ok) {
+                    alert('Error al guardar el perfil.');
+                    return;
+                }
+
+                // Save device password if provided
+                const pw = document.getElementById('modal-device-password').value.trim();
+                if (pw.length >= 4) {
+                    const pwRes = await fetch('/api/auth/device/password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ device_id: deviceId, password: pw })
+                    });
+                    if (!pwRes.ok) {
+                        alert('Perfil guardado, pero error al guardar password.');
+                        closeModal();
+                        return;
+                    }
+                }
+                
+                alert('Perfil guardado correctamente. La identidad del bot se aplicará en su próximo diálogo.');
+                closeModal();
+            } catch(e) {
+                alert('Error de red al guardar.');
+            }
+        }
+
+        async function triggerOTA(deviceId) {
+            if(!confirm(`¿Estás seguro que deseas enviar el comando OTA (Reinicio Remoto) al dispositivo ${deviceId}?`)) return;
+            
+            try {
+                const res = await fetch(`/api/fleet/${deviceId}/ota`, { method: 'POST' });
+                const data = await res.json();
+                if(data.success) {
+                    alert(`✅ Comando OTA enviado con éxito. El dispositivo se reiniciará y actualizará.`);
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch(e) {
+                alert(`❌ Error de red al enviar OTA: ${e}`);
+            }
+        }
+
+        async function triggerMassOTA() {
+            if(!confirm(`⚠️ ATENCIÓN: ¿Estás seguro que deseas enviar el comando OTA a TODOS los dispositivos activos simultáneamente? Esto reiniciará y actualizará la flota completa.`)) return;
+            
+            try {
+                const res = await fetch(`/api/fleet/ota/all`, { method: 'POST' });
+                const data = await res.json();
+                if(data.success) {
+                    alert(`✅ OTA Masivo enviado con éxito a ${data.devices_triggered} dispositivos.`);
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch(e) {
+                alert(`❌ Error de red al enviar OTA Masivo: ${e}`);
+            }
+        }
+
+        setInterval(fetchFleet, 2000);
+        fetchFleet();
+    </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+# ── mebot-audio-bridge ───────────────────────────────────────────────────────
+# Arrancar:  podman-compose up --build -d
+# Detener:   podman-compose down
+#
+# Se conecta a mebot_net (red externa del stack bot2market) para alcanzar:
+#   - bot2market-litellm:4000   (LLM proxy OpenAI-compatible)
+#   - bot2market-agent:18789    (OpenClaw Agent API con contexto NativoERP)
+
+version: "3.9"
+
+services:
+  mebot-audio-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        WHISPER_MODEL: ${MEBOT_WHISPER_MODEL:-small}
+    image: localhost/mebot-audio-bridge:local
+    container_name: mebot-audio-bridge
+    restart: unless-stopped
+    ports:
+      - "18081:16000"
+    env_file:
+      - .env
+    networks:
+      - mebot-stack_mebot_net
+    volumes:
+      - whisper-models:/root/.cache/whisper
+      - .:/app
+      - ../build:/build:ro
+      - /dev:/dev:ro
+    mem_limit: 2g
+    cpus: "1.5"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:16000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  whisper-models:
+
+networks:
+  mebot-stack_mebot_net:
+    external: true

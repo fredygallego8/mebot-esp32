@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeBot ESP32 — Arquitectura & Plan de Integración</title>
+<style>
+  :root {
+    --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;
+    --accent:#58a6ff;--accent2:#3fb950;--warn:#d29922;--danger:#f85149;
+    --text:#e6edf3;--muted:#8b949e;--code-bg:#1c2128;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;}
+  .container{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
+  h1{font-size:2rem;color:var(--accent);border-bottom:2px solid var(--border);padding-bottom:.75rem;margin-bottom:.5rem;}
+  h2{font-size:1.3rem;color:var(--accent);margin:2.2rem 0 .75rem;display:flex;align-items:center;gap:.5rem;}
+  h3{font-size:1rem;color:var(--text);margin:1.2rem 0 .4rem;}
+  p{color:var(--muted);margin-bottom:.6rem;}
+  .subtitle{color:var(--muted);margin-bottom:2rem;font-size:.93rem;}
+  .badge{display:inline-block;padding:.15rem .55rem;border-radius:20px;font-size:.72rem;font-weight:600;}
+  .bg{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin:1rem 0;}
+  code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:.1rem .35rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+  /* Flow */
+  .flow{display:flex;align-items:center;gap:0;flex-wrap:nowrap;justify-content:center;overflow-x:auto;padding:.5rem 0;}
+  .node{display:flex;flex-direction:column;align-items:center;min-width:100px;}
+  .nb{padding:.55rem .9rem;border-radius:8px;font-size:.78rem;font-weight:600;text-align:center;border:1.5px solid;min-width:90px;}
+  .nl{font-size:.65rem;color:var(--muted);margin-top:.25rem;text-align:center;}
+  .arrow{color:var(--muted);font-size:1.3rem;padding:0 .2rem;align-self:center;margin-bottom:1.4rem;}
+  .n-esp{background:#1a2a1a;border-color:#3fb950;color:#3fb950;}
+  .n-br{background:#1a1a3a;border-color:#58a6ff;color:#58a6ff;}
+  .n-stt{background:#1a2a1a;border-color:#3fb950;color:#3fb950;}
+  .n-llm{background:#2a1a3a;border-color:#bc8cff;color:#bc8cff;}
+  .n-tts{background:#1a2a3a;border-color:#58a6ff;color:#58a6ff;}
+  /* Bidir */
+  .bidir{display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;align-items:center;margin:1rem 0;}
+  .bc{background:var(--surface2);border-radius:8px;padding:1rem;}
+  .bc h4{font-size:.82rem;margin-bottom:.5rem;}
+  .bm{display:flex;flex-direction:column;align-items:center;gap:.3rem;color:var(--muted);font-size:1.3rem;}
+  /* Messages */
+  .msgs{display:flex;flex-direction:column;gap:.35rem;margin:.5rem 0;}
+  .msg{display:flex;align-items:flex-start;gap:.6rem;font-size:.79rem;}
+  .dir{font-size:.67rem;padding:.08rem .35rem;border-radius:3px;font-weight:700;white-space:nowrap;margin-top:.05rem;}
+  .dir.up{background:#1a3a2a;color:#3fb950;}
+  .dir.dn{background:#1f3a5f;color:#58a6ff;}
+  .mb{color:var(--muted);}
+  .mb strong{color:var(--text);}
+  /* Pipe */
+  .pipe{display:flex;flex-direction:column;gap:.45rem;margin:.75rem 0;}
+  .ps{display:flex;align-items:flex-start;gap:.9rem;background:var(--surface2);border-radius:8px;padding:.7rem .9rem;border-left:3px solid;}
+  .ps.stt{border-color:#3fb950;}.ps.llm{border-color:#bc8cff;}.ps.tts{border-color:#58a6ff;}.ps.proto{border-color:#ffa657;}
+  .pn{font-size:1rem;font-weight:700;min-width:1.4rem;}
+  .pc strong{display:block;font-size:.86rem;margin-bottom:.1rem;}
+  .pc span{font-size:.77rem;color:var(--muted);}
+  /* Table */
+  table{width:100%;border-collapse:collapse;margin:.75rem 0;font-size:.82rem;}
+  th{background:var(--surface2);color:var(--muted);text-align:left;padding:.45rem .7rem;border-bottom:1px solid var(--border);font-weight:600;}
+  td{padding:.4rem .7rem;border-bottom:1px solid var(--border);vertical-align:top;}
+  tr:hover td{background:var(--surface2);}
+  /* Cards */
+  .cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.9rem;margin:.75rem 0;}
+  .card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.9rem;border-left:3px solid;}
+  .card.ok{border-color:#3fb950;}.card.warn{border-color:#d29922;}.card.risk{border-color:#f85149;}
+  .card h4{font-size:.83rem;margin-bottom:.3rem;}
+  .card p{font-size:.78rem;margin:0;}
+  /* Timing */
+  .tbar{display:flex;gap:2px;height:26px;border-radius:6px;overflow:hidden;margin:.6rem 0;}
+  .ts{display:flex;align-items:center;justify-content:center;font-size:.63rem;font-weight:700;color:rgba(255,255,255,.85);}
+  .t1{background:#238636;}.t2{background:#9933cc;}.t3{background:#1f6feb;}.t4{background:#e36209;}
+  /* TOC */
+  .toc{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.4rem;margin-bottom:2rem;}
+  .toc ul{list-style:none;padding:0;columns:2;gap:1rem;}
+  .toc li{padding:.18rem 0;}
+  .toc a{color:var(--accent);text-decoration:none;font-size:.85rem;}
+  .toc a:hover{text-decoration:underline;}
+  hr{border:none;border-top:1px solid var(--border);margin:2rem 0;}
+  footer{text-align:center;color:var(--muted);font-size:.75rem;margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);}
+  /* Timeline git-style */
+  .timeline{position:relative;padding:.5rem 0 .5rem 0;margin:.75rem 0;}
+  .timeline::before{content:'';position:absolute;left:17px;top:8px;bottom:8px;width:2px;background:linear-gradient(to bottom,#238636 0%,#238636 52%,#388bfd 52%,#388bfd 57%,#6e40c9 57%,#6e40c9 75%,#30363d 75%);}
+  .tl-item{display:flex;gap:1rem;position:relative;align-items:flex-start;}
+  .tl-dot{width:36px;height:36px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:.63rem;font-weight:700;flex-shrink:0;position:relative;z-index:1;}
+  .tl-dot.done{background:#0d2a18;border-color:#3fb950;color:#3fb950;}
+  .tl-dot.today{background:#0a1f35;border-color:#58a6ff;color:#58a6ff;box-shadow:0 0 0 5px rgba(88,166,255,.15),0 0 12px rgba(88,166,255,.3);}
+  .tl-dot.soon{background:#211d0a;border-color:#d29922;color:#d29922;}
+  .tl-dot.later{background:#161b22;border-color:#444c56;color:#8b949e;}
+  .tl-dot.risk{background:#1a0a0a;border-color:#f85149;color:#f85149;}
+  .tl-content{padding:.15rem 0 1.6rem .3rem;flex:1;min-width:0;}
+  .tl-head{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;}
+  .tl-date{font-size:.67rem;color:var(--muted);white-space:nowrap;}
+  .tl-day{font-size:.62rem;padding:.06rem .35rem;border-radius:20px;font-weight:700;white-space:nowrap;}
+  .tl-day.done{background:#0d2a18;color:#3fb950;}
+  .tl-day.today{background:#0a1f35;color:#58a6ff;}
+  .tl-day.soon{background:#211d0a;color:#d29922;}
+  .tl-day.later{background:#161b22;color:#8b949e;}
+  .tl-day.risk{background:#1a0a0a;color:#f85149;}
+  .tl-title{font-size:.87rem;font-weight:600;color:var(--text);margin:.12rem 0 .18rem;}
+  .tl-desc{font-size:.76rem;color:var(--muted);line-height:1.5;}
+  .tl-tags{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.35rem;}
+  .tl-tag{font-size:.63rem;padding:.08rem .38rem;border-radius:20px;font-weight:600;background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+  .tl-tag.ok{background:#0d2a18;color:#3fb950;border-color:#238636;}
+  .tl-tag.info{background:#0a1f35;color:#58a6ff;border-color:#1f6feb;}
+  .tl-tag.warn{background:#211d0a;color:#d29922;border-color:#b08800;}
+  .tl-tag.red{background:#1a0a0a;color:#f85149;border-color:#8b1a1a;}
+  .tl-connector{height:0;}
+  /* Summary strip */
+  .day-strip{display:flex;gap:4px;flex-wrap:wrap;margin:.6rem 0 1rem;}
+  .ds{width:20px;height:20px;border-radius:4px;cursor:default;position:relative;}
+  .ds:hover::after{content:attr(data-tip);position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:#161b22;border:1px solid #30363d;color:#e6edf3;font-size:.65rem;padding:.2rem .45rem;border-radius:4px;white-space:nowrap;z-index:10;}
+  /* Progress */
+  .progress-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.7rem;margin:.75rem 0;}
+  .pg{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem;text-align:center;}
+  .pg .pct{font-size:1.8rem;font-weight:700;}
+  .pg .plabel{font-size:.72rem;color:var(--muted);margin-top:.1rem;}
+  .pbar-wrap{background:#21262d;border-radius:20px;height:8px;margin:.3rem 0;}
+  .pbar{height:8px;border-radius:20px;}
+  .checklist{list-style:none;padding:0;margin:.6rem 0;}
+  .checklist li{padding:.28rem .4rem;font-size:.81rem;border-radius:4px;display:flex;align-items:center;gap:.5rem;}
+  .checklist li:hover{background:var(--surface2);}
+  .ci{font-size:.9rem;min-width:1.2rem;}
+  .cl{color:var(--muted);}
+  .cl strong{color:var(--text);}
+  /* Task list por día */
+  .tl-tasks{list-style:none;padding:0;margin:.45rem 0 0 0;}
+  .tl-tasks li{display:flex;align-items:flex-start;gap:.45rem;font-size:.74rem;padding:.18rem 0;color:var(--muted);line-height:1.4;}
+  .tl-tasks li strong{color:var(--text);font-weight:600;}
+  .tk{font-size:.8rem;min-width:1rem;line-height:1.4;}
+  .tl-pending-note{font-size:.71rem;color:var(--muted);font-style:italic;margin-top:.4rem;padding:.3rem .6rem;background:var(--surface2);border-radius:4px;border-left:2px solid var(--border);display:inline-block;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🤖 MeBot ESP32 — Arquitectura & Plan de Integración</h1>
+<p class="subtitle">
+  Flujos de voz bidireccional &nbsp;·&nbsp; M5Stack CoreS3 + mebot-bridge (Python) + OpenRouter
+  &nbsp;·&nbsp; <span class="badge" style="background:#1f3a5f;color:#58a6ff;">v2.4.2+b34</span>
+  &nbsp;·&nbsp; <span class="badge" style="background:#1a3a2a;color:#3fb950;">Red Local 10.119.4.90</span>
+  &nbsp;·&nbsp; 29 Abril 2026
+  &nbsp;·&nbsp; <a href="http://10.119.4.90:16000/admin" style="background:#0a1f35;color:#58a6ff;border:1px solid #1f6feb;border-radius:20px;padding:.15rem .55rem;font-size:.72rem;font-weight:600;text-decoration:none;" target="_blank">⚙️ Panel Admin →</a>
+  &nbsp;·&nbsp; <a href="kanban.html" style="background:#211d0a;color:#d29922;border:1px solid #b08800;border-radius:20px;padding:.15rem .55rem;font-size:.72rem;font-weight:600;text-decoration:none;">📋 Ver Kanban →</a>
+</p>
+
+<!-- PROGRESO GLOBAL -->
+<div class="bg" id="progreso">
+  <strong style="color:var(--text);font-size:.88rem;">📊 Progreso Global — 2026-04-29 (Network & Sensibilidad)</strong>
+  <div class="progress-grid" style="margin-top:.8rem;">
+    <div class="pg"><div class="pct" style="color:#3fb950;">100%</div><div class="pbar-wrap"><div class="pbar" style="width:100%;background:#238636;"></div></div><div class="plabel">Firmware</div></div>
+    <div class="pg"><div class="pct" style="color:#58a6ff;">100%</div><div class="pbar-wrap"><div class="pbar" style="width:100%;background:#1f6feb;"></div></div><div class="plabel">Bridge Python</div></div>
+    <div class="pg"><div class="pct" style="color:#bc8cff;">98%</div><div class="pbar-wrap"><div class="pbar" style="width:98%;background:#6e40c9;"></div></div><div class="plabel">LLM / Agente</div></div>
+    <div class="pg"><div class="pct" style="color:#58a6ff;">100%</div><div class="pbar-wrap"><div class="pbar" style="width:100%;background:#1f6feb;"></div></div><div class="plabel">Admin Web</div></div>
+    <div class="pg"><div class="pct" style="color:#3fb950;">92%</div><div class="pbar-wrap"><div class="pbar" style="width:92%;background:#238636;"></div></div><div class="plabel">Sensibilidad</div></div>
+  </div>
+  <ul class="checklist">
+     <li><span class="ci">✅</span><span class="cl"><strong>Firmware v2.3.0+b28</strong> compilado y flasheado en M5Stack CoreS3</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>OTA URL</strong> apunta a bridge local 10.94.215.90:16000 o Nginx Proxy</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>WebSocket</strong> ESP32 ↔ bridge funcionando con BinaryProtocol3 (BP3)</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>STT Whisper</strong> (modelo small) optimizado, latencia < 2s</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>LLM OpenRouter</strong> (liquid/lfm-2.5-1.2b) con historial de conversación</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>TTS gTTS / Edge-TTS</strong> audio 24kHz fluyendo al speaker sin ruidos</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>LCD</strong> chat bubbles LVGL completamente funcionales</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>BinaryProtocol3</strong> forzado desde OTA check (v3)</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>VAD por Energía</strong> calibrado dinámicamente desde panel web</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>Bridge persistente</strong> bajo systemd operativo 24/7</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>Red Dinámica</strong>: Detección IP 10.119.4.90 exitosa</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>Firewall UFW</strong>: Puerto 16000 abierto (Regla 3)</span></li>
+     <li><span class="ci">✅</span><span class="cl"><strong>Firmware v2.4.2</strong>: Ganancia micro 50 + VAD 0.015</span></li>
+     <li><span class="ci">🚀</span><span class="cl"><strong>Calibración Final</strong>: Pipeline optimizado para voz tenue</span></li>
+  </ul>
+</div>
+
+<!-- 9. PANEL ADMIN -->
+<h2 id="admin">⚙️ 9. Panel de Administración Web</h2>
+<div class="bg">
+  <p>Interfaz web completa para administrar y monitorear el sistema MeBot en tiempo real.</p>
+
+  <h3>Acceso al panel</h3>
+  <div class="msgs">
+    <div class="msg"><span class="dir dn">🌐</span><span class="mb"><strong>http://10.94.215.90:16000/admin</strong> — Panel completo con tabs para estado, logs, configuración y control ESP32</span></div>
+    <div class="msg"><span class="dir dn">📊</span><span class="mb"><strong>http://10.94.215.90:16000/stats</strong> — API JSON con métricas del sistema</span></div>
+    <div class="msg"><span class="dir dn">🔧</span><span class="mb"><strong>http://10.94.215.90:16000/config</strong> — Configuración actual del sistema</span></div>
+  </div>
+
+  <h3>Funcionalidades</h3>
+  <div class="cg">
+    <div class="card ok"><h4>📊 Estado del Sistema</h4><p>Monitoreo en tiempo real: sesiones activas, STT/LLM/TTS exitosos, latencia, uptime. Actualización automática cada 30s.</p></div>
+    <div class="card ok"><h4>📝 Logs en Vivo</h4><p>Visualización de logs con filtros por nivel (DEBUG/INFO/WARNING/ERROR). Auto-scroll, descarga y limpieza de logs.</p></div>
+    <div class="card ok"><h4>⚙️ Configuración Dinámica</h4><p>Ajuste parámetros VAD en tiempo real (umbral energía, frames habla/silencio). Configuración TTS/STT con validación.</p></div>
+    <div class="card ok"><h4>🎛️ Control ESP32</h4><p>Comandos remotos: reset, limpiar buffers, pruebas TTS/STT, calibración VAD, loopback audio.</p></div>
+    <div class="card ok"><h4>🧪 Pruebas Automatizadas</h4><p>Pipeline completo, latencia red, calibración VAD, loopback de audio. Resultados detallados con métricas.</p></div>
+  </div>
+
+  <h3>Endpoints de administración</h3>
+  <table>
+    <tr><th>Endpoint</th><th>Método</th><th>Función</th></tr>
+    <tr><td><code>/admin</code></td><td>GET</td><td>Panel web completo</td></tr>
+    <tr><td><code>/config</code></td><td>GET</td><td>Obtener configuración actual</td></tr>
+    <tr><td><code>/config/vad</code></td><td>POST</td><td>Actualizar parámetros VAD</td></tr>
+    <tr><td><code>/config/tts</code></td><td>POST</td><td>Actualizar configuración TTS/STT</td></tr>
+    <tr><td><code>/logs</code></td><td>GET</td><td>Obtener logs (parámetro lines)</td></tr>
+    <tr><td><code>/logs/download</code></td><td>GET</td><td>Descargar archivo completo de logs</td></tr>
+    <tr><td><code>/set-log-level</code></td><td>POST</td><td>Cambiar nivel de logging</td></tr>
+    <tr><td><code>/clear-logs</code></td><td>POST</td><td>Limpiar archivo de logs</td></tr>
+    <tr><td><code>/esp32/command</code></td><td>POST</td><td>Enviar comandos al ESP32</td></tr>
+    <tr><td><code>/test/*</code></td><td>POST</td><td>Ejecutar pruebas del sistema</td></tr>
+  </table>
+
+  <div class="alert success">
+    <strong>✅ Panel operativo:</strong> El panel de administración está completamente funcional y permite control total del sistema MeBot sin necesidad de acceso SSH o terminal.
+  </div>
+
+  <div class="alert warning">
+    <strong>⚠️ Control ESP32 requiere conexión:</strong> Los botones de control del ESP32 solo funcionan cuando hay un dispositivo conectado vía WebSocket. Si aparecen como no funcionales, conecta primero un ESP32 al sistema.
+  </div>
+</div>
+
+<!-- 10. CRONOGRAMA -->
+<h2 id="cronograma">📅 10. Cronograma — Días trabajados &amp; pendientes</h2>
+<p>Inicio del sprint: <strong>14 Abr 2026</strong> &nbsp;·&nbsp; Hoy: <strong>28 Abr 2026</strong> &nbsp;·&nbsp; Producción estimada: <strong>3 May 2026</strong></p>
+
+<!-- Mapa de calor de días -->
+<div class="bg" style="margin-bottom:1rem;">
+  <p style="font-size:.72rem;color:var(--muted);margin-bottom:.55rem;">Actividad diaria (estilo git contrib)</p>
+  <div class="day-strip">
+    <!-- Semana 1: 14–20 Abr (HECHOS) -->
+    <div class="ds" style="background:#0e4429;" data-tip="14 Abr · Día 1 · Diseño + bridge base"></div>
+    <div class="ds" style="background:#006d32;" data-tip="15 Abr · Día 2 · Protocolo WS + opus codec"></div>
+    <div class="ds" style="background:#26a641;" data-tip="16 Abr · Día 3 · Fix 24kHz + rate-limit + ffmpeg async"></div>
+    <div class="ds" style="background:#39d353;" data-tip="17 Abr · Día 4 · STT Whisper + VAD RMS"></div>
+    <div class="ds" style="background:#39d353;" data-tip="18 Abr · Día 5 · LLM OpenRouter + gTTS fallback"></div>
+    <div class="ds" style="background:#26a641;" data-tip="19 Abr · Día 6 · Firmware v2.3.0 + flash ESP32"></div>
+    <div class="ds" style="background:#006d32;" data-tip="20 Abr · Día 7 · LCD burbujas + MEBOT_WS_URL + docs"></div>
+    <!-- Semana 2: 21–27 Abr (COMPLETADOS) -->
+    <div class="ds" style="background:#006d32;" data-tip="21 Abr · D8 · Bridge local + STT ✅ + speaker fix"></div>
+    <div class="ds" style="background:#006d32;" data-tip="22 Abr · D9 · Speaker BP3 fix + Greeting OK"></div>
+    <div class="ds" style="background:#39d353;" data-tip="23 Abr · D10 · Panel Admin Web completo + Control remoto"></div>
+    <div class="ds" style="background:#39d353;" data-tip="24 Abr · D11 · Bridge persistente systemd + Retry LLM"></div>
+    <div class="ds" style="background:#26a641;" data-tip="25 Abr · D12 · OpenClaw Agent API integración NativoERP"></div>
+    <div class="ds" style="background:#006d32;" data-tip="26 Abr · D13 · TLS wss:// + OTA producción AWS"></div>
+    <div class="ds" style="background:#39d353;" data-tip="27 Abr · D14 · Contexto NativoERP Agente completo"></div>
+    <!-- HOY: 28 Abr -->
+    <div class="ds" style="background:#1f6feb;outline:2px solid #58a6ff;outline-offset:2px;" data-tip="28 Abr · D15 · Launch Day · Tests producción + Documentación Final"></div>
+    <!-- Futuro -->
+    <div class="ds" style="background:#b08800;opacity:.5;" data-tip="29 Abr · D16 · Monitorización post-lanzamiento"></div>
+    <div class="ds" style="background:#b08800;opacity:.5;" data-tip="30 Abr · D17 · Optimizaciones de latencia"></div>
+    <div class="ds" style="background:#8b1a1a;opacity:.5;" data-tip="1 May · D18 · Multi-device support testing"></div>
+    <div class="ds" style="background:#8b1a1a;opacity:.5;" data-tip="2 May · D19 · Backup & Disaster Recovery tests"></div>
+    <div class="ds" style="background:#8b1a1a;opacity:.4;" data-tip="3 May · 🚀 Meta final cumplida"></div>
+  </div>
+  <div style="display:flex;gap:1rem;font-size:.67rem;color:var(--muted);flex-wrap:wrap;">
+    <span><span style="display:inline-block;width:10px;height:10px;background:#39d353;border-radius:2px;margin-right:3px;vertical-align:middle;"></span>Completado</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#1f6feb;border-radius:2px;margin-right:3px;vertical-align:middle;outline:1px solid #58a6ff;"></span>Hoy</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#1a2e1a;border:1px solid #238636;border-radius:2px;margin-right:3px;vertical-align:middle;"></span>Próximos</span>
+  </div>
+</div>
+
+<!-- Timeline git-style -->
+<div class="timeline">
+
+  <!-- DÍAS 1-9 (RESUMIDOS) -->
+  <div class="tl-item">
+    <div class="tl-dot done">D1-9</div>
+    <div class="tl-content">
+      <div class="tl-head"><span class="tl-day done">✅ Completado</span><span class="tl-date">14–22 Abr 2026</span></div>
+      <div class="tl-title">Cimientos, Audio & Protocolo</div>
+      <p class="tl-desc">Desarrollo del bridge, protocolo WebSocket BP3, codecs Opus, VAD por energía y fixes críticos de audio (24kHz).</p>
+      <div class="tl-tags"><span class="tl-tag ok">Arquitectura</span><span class="tl-tag ok">Opus</span><span class="tl-tag ok">BP3</span></div>
+    </div>
+  </div>
+
+  <!-- DÍA 10 -->
+  <div class="tl-item">
+    <div class="tl-dot done">D10</div>
+    <div class="tl-content">
+      <div class="tl-head"><span class="tl-day done">✅ Completado</span><span class="tl-date">23 Abr 2026</span></div>
+      <div class="tl-title">Panel Admin Web & Control Remoto</div>
+      <ul class="tl-tasks">
+        <li><span class="tk">✅</span><span>Panel admin en puerto 16000 con monitoreo RT</span></li>
+        <li><span class="tk">✅</span><span>Control remoto ESP32 (reset, test tts, calibración)</span></li>
+        <li><span class="tk">✅</span><span>Streaming de logs y configuración dinámica VAD</span></li>
+      </ul>
+      <div class="tl-tags"><span class="tl-tag ok">Admin Panel</span><span class="tl-tag ok">WebControl</span></div>
+    </div>
+  </div>
+
+  <!-- DÍA 11 -->
+  <div class="tl-item">
+    <div class="tl-dot done">D11</div>
+    <div class="tl-content">
+      <div class="tl-head"><span class="tl-day done">✅ Completado</span><span class="tl-date">24 Abr 2026</span></div>
+      <div class="tl-title">Persistencia & Robustez</div>
+      <ul class="tl-tasks">
+        <li><span class="tk">✅</span><span>Bridge persistente como servicio systemd</span></li>
+        <li><span class="tk">✅</span><span>Retry automático LLM con backoff exponencial</span></li>
+        <li><span class="tk">✅</span><span>Manejo de desconexiones WebSocket mejorado</span></li>
+      </ul>
+      <div class="tl-tags"><span class="tl-tag ok">systemd</span><span class="tl-tag ok">Stability</span></div>
+    </div>
+  </div>
+
+  <!-- DÍA 12 -->
+  <div class="tl-item">
+    <div class="tl-dot done">D12</div>
+    <div class="tl-content">
+      <div class="tl-head"><span class="tl-day done">✅ Completado</span><span class="tl-date">25 Abr 2026</span></div>
+      <div class="tl-title">Integración NativoERP (OpenClaw)</div>
+      <ul class="tl-tasks">
+        <li><span class="tk">✅</span><span>Conexión con OpenClaw Agent API funcional</span></li>
+        <li><span class="tk">✅</span><span>Acceso a inventario y datos de clientes vía voz</span></li>
+        <li><span class="tk">✅</span><span>Conversación con contexto de negocio</span></li>
+      </ul>
+      <div class="tl-tags"><span class="tl-tag ok">NativoERP</span><span class="tl-tag ok">OpenClaw</span></div>
+    </div>
+  </div>
+
+  <!-- DÍA 13 -->
+  <div class="tl-item">
+    <div class="tl-dot done">D13</div>
+    <div class="tl-content">
+      <div class="tl-head"><span class="tl-day done">✅ Completado</span><span class="tl-date">26 Abr 2026</span></div>
+      <div class="tl-title">Producción AWS & Seguridad</div>
+      <ul class="tl-tasks">
+        <li><span class="tk">✅</span><span>Nginx configurado con terminación TLS (wss://)</span></li>
+        <li><span class="tk">✅</span><span>OTA URL de producción HTTPS operativa</span></li>
+        <li><span class="tk">✅</span><span>Security Groups ajustados en AWS EC2</span></li>
+      </ul>
+      <div class="tl-tags"><span class="tl-tag ok">AWS</span><span class="tl-tag ok">TLS/WSS</span></div>
+    </div>
+  </div>
+
+  <!-- DÍA 14 -->
+  <div class="tl-item">
+    <div class="tl-dot done">D14</div>
+    <div class="tl-content">
+      <div class="tl-head"><span class="tl-day done">✅ Completado</span><span class="tl-date">27 Abr 2026</span></div>
+      <div class="tl-title">Ajuste Fino de Agente</div>
+      <ul class="tl-tasks">
+        <li><span class="tk">✅</span><span>System prompts optimizados para respuestas cortas</span></li>
+        <li><span class="tk">✅</span><span>Wake word workaround (botón) validado en campo</span></li>
+        <li><span class="tk">✅</span><span>Mejora de latencia end-to-end (< 4s)</span></li>
+      </ul>
+      <div class="tl-tags"><span class="tl-tag ok">Fine-tuning</span><span class="tl-tag ok">UX</span></div>
+    </div>
+  </div>
+
+  <!-- HOY: DÍA 15 -->
+  <div class="tl-item">
+    <div class="tl-dot today">HOY</div>
+    <div class="tl-content">
+      <div class="tl-head"><span class="tl-day today">⚡ HOY — Launch Day</span><span class="tl-date">28 Abr 2026</span></div>
+      <div class="tl-title">Lanzamiento & Verificación Final</div>
+      <ul class="tl-tasks">
+        <li><span class="tk">✅</span><span><strong>Tests de producción finales:</strong> Flujo completo OK</span></li>
+        <li><span class="tk">✅</span><span><strong>Documentación:</strong> Actualización de manuales y arquitectura</span></li>
+        <li><span class="tk">🔄</span><span><strong>Hito:</strong> Sistema 100% operativo en entorno real</span></li>
+      </ul>
+      <div class="tl-tags"><span class="tl-tag ok">Launch</span><span class="tl-tag ok">QA</span><span class="tl-tag info">Live</span></div>
+    </div>
+  </div>
+
+  <!-- FUTURO: META -->
+  <div class="tl-item">
+    <div class="tl-dot later">META</div>
+    <div class="tl-content">
+      <div class="tl-head"><span class="tl-day later">🚀 Meta Final</span><span class="tl-date">3 May 2026</span></div>
+      <div class="tl-title">Despliegue Multi-dispositivo</div>
+      <p class="tl-desc">Escalado a 10+ dispositivos CoreS3 en diferentes sucursales con gestión centralizada.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Resumen numérico -->
+<div class="progress-grid" style="margin-top:.5rem;">
+  <div class="pg"><div class="pct" style="color:#3fb950;">14</div><div class="pbar-wrap"><div class="pbar" style="width:100%;background:#238636;"></div></div><div class="plabel">Días completados</div></div>
+  <div class="pg"><div class="pct" style="color:#58a6ff;">1</div><div class="pbar-wrap"><div class="pbar" style="width:100%;background:#1f6feb;"></div></div><div class="plabel">Día actual (D15)</div></div>
+  <div class="pg"><div class="pct" style="color:#d29922;">4</div><div class="pbar-wrap"><div class="pbar" style="width:100%;background:#b08800;"></div></div><div class="plabel">Días restantes</div></div>
+  <div class="pg"><div class="pct" style="color:#8b949e;">78%</div><div class="pbar-wrap"><div class="pbar" style="width:78%;background:#444c56;"></div></div><div class="plabel">Sprint completado (D15/19)</div></div>
+</div>
+
+<!-- 11. ROADMAP -->
+<h2 id="roadmap">🗺️ 11. Roadmap</h2>
+<div class="cg">
+  <div class="card ok"><h4>🟢 Fase 1 — Local Docker ✅</h4><p>Bridge laptop WiFi LAN · OTA IP local · STT+LLM+TTS. Validado.</p></div>
+  <div class="card ok"><h4>🟢 Fase 2 — Estabilidad ✅</h4><p>Bridge systemd service · Panel admin web · Control remoto. Validado.</p></div>
+  <div class="card ok"><h4>🟢 Fase 3 — Producción AWS ✅</h4><p>nginx <code>/mebot-ws/</code> + TLS · OTA URL HTTPS · Security Groups. Operativo.</p></div>
+  <div class="card ok"><h4>🟢 Fase 4 — Integración ERP ✅</h4><p>Conexión OpenClaw Agente · Contexto NativoERP · Consultas de voz reales. Operativo.</p></div>
+  <div class="card warn"><h4>🟡 Fase 5 — Optimización Post-Launch</h4><p>Wake word español nativo · Test audio local · Mejoras de latencia sub-2s.</p></div>
+  <div class="card risk"><h4>🔴 Fase 6 — Escalado Masivo</h4><p>Soporte multi-dispositivo · Gestión de flota vía Panel Admin · Actualizaciones masivas OTA.</p></div>
+</div>
+
+<h2 id="fase6-detalles" style="margin-top: 3rem;">📡 Detalle: Fase 6 — Escalado Masivo (Fleet & OTA)</h2>
+<div class="bg">
+  <p>Esta fase permite orquestar decenas de ESP32 de forma simultánea. Se pasa de una arquitectura 1-a-1 a una topología en estrella donde el Bridge coordina la flota completa por WiFi y la interfaz HTML.</p>
+  
+  <h3>1. Heartbeats & Registro Automático</h3>
+  <ul class="checklist">
+    <li><span class="ci">📡</span><span class="cl"><strong>ESP32 (C/C++):</strong> Cada robot envía un ping a <code>POST /api/register</code> cada 60s con su MAC, IP y versión de FW.</span></li>
+    <li><span class="ci">🧠</span><span class="cl"><strong>Bridge (Python):</strong> <code>main.py</code> registra cada dispositivo en una base de datos local (ej. <code>device_registry.json</code>).</span></li>
+  </ul>
+
+  <h3>2. Panel de Flota (fleet.html)</h3>
+  <ul class="checklist">
+    <li><span class="ci">🖥️</span><span class="cl"><strong>UI Maestra:</strong> Tabla centralizada con estado en vivo (Online/Offline) de cada ESP32.</span></li>
+    <li><span class="ci">🎛️</span><span class="cl"><strong>Acciones Masivas:</strong> Checkboxes para seleccionar dispositivos y enviar comandos en lote (Reset, Mute, Actualizar).</span></li>
+  </ul>
+
+  <h3>3. Flujo OTA Inalámbrico</h3>
+  <ul class="checklist">
+    <li><span class="ci">📥</span><span class="cl"><strong>Subida HTML:</strong> El Admin sube <code>firmware.bin</code> en la web, el Bridge lo aloja en <code>/firmware/</code>.</span></li>
+    <li><span class="ci">⚡</span><span class="cl"><strong>Broadcast WS:</strong> El Bridge envía comando JSON masivo: <code>{"cmd":"ota", "url":"http://10.x.x.x:16000/firmware.bin"}</code>.</span></li>
+    <li><span class="ci">🛠️</span><span class="cl"><strong>Flasheo ESP32:</strong> El robot descarga el binario con <code>esp_http_client</code>, lo escribe vía <code>esp_ota_ops</code> y reinicia. Rollback automático ante fallos.</span></li>
+  </ul>
+
+  <h3 style="margin-top: 1.5rem;">Diagrama de Flujo: Actualización Masiva OTA</h3>
+  <div class="diagram" style="padding: 1.5rem; text-align: center; background: var(--surface2);">
+<pre style="margin: 0;">
+[ Admin Web Panel ]
+      │ (1) Sube firmware.bin por HTML
+      ▼
+[ Bridge Maestro (main.py) ]
+      │ (2) Emite comando WS Masivo {"cmd": "start_ota"}
+      ├───────────────────────┬───────────────────────┐
+      ▼                       ▼                       ▼
+[ ESP32 #1 ]            [ ESP32 #2 ]            [ ESP32 #N ]
+      │                       │                       │
+      │ (3) GET /firmware.bin │ (3) GET /firmware.bin │ (3) GET /firmware.bin
+      ▼                       ▼                       ▼
+(4) Flasheo OTA         (4) Flasheo OTA         (4) Flasheo OTA
+      │                       │                       │
+      ▼                       ▼                       ▼
+(5) Reboot & Confirm    (5) Reboot & Confirm    (5) Reboot & Confirm
+</pre>
+  </div>
+</div>
+
+<hr>
+<footer>MeBot ESP32 &nbsp;·&nbsp; M5Stack CoreS3 &nbsp;·&nbsp; mebot-bridge v2.3.0+admin &nbsp;·&nbsp; Panel Web Completo &nbsp;·&nbsp; Antigravity AI &nbsp;·&nbsp; 2026</footer>
+</div>
+</body>
+</html>

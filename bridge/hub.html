@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeBot ESP32 | Hub de Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --accent: #22d3ee;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 3rem 1rem;
+            text-align: center;
+            width: 100%;
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.8), transparent);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 2rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.5rem;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, var(--text-dim));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0.5rem auto 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            padding: 0 2rem 4rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transform: translateX(-100%);
+            transition: 0.6s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: 0.3s;
+        }
+
+        .card:hover .card-icon {
+            background: var(--primary);
+            color: white;
+            transform: rotate(5deg);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #fff;
+        }
+
+        .card-desc {
+            color: var(--text-dim);
+            line-height: 1.6;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .card-tag {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            align-self: flex-start;
+        }
+
+        .status-dot {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            width: 10px;
+            height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22c55e;
+        }
+
+        .footer {
+            margin-top: auto;
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--glass-border);
+            width: 100%;
+        }
+
+        .version {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .container { grid-template-columns: 1fr; padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">M</div>
+            <h1>MeBot ESP32 Portal</h1>
+        </div>
+        <p class="subtitle">Ecosistema de gestión y monitoreo para dispositivos inteligentes Nativo</p>
+    </header>
+
+    <div class="container">
+        <!-- Setup Wizard -->
+        <a href="/br/setup" class="card" style="border-color: rgba(16, 185, 129, 0.3);">
+            <div class="status-dot" style="background: #10B981; box-shadow: 0 0 10px #10B981;"></div>
+            <div class="card-icon" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2);">🧙</div>
+            <h3 class="card-title">Setup Wizard</h3>
+            <p class="card-desc">Configuración guiada paso a paso: identidad, voz, WiFi, LED y más. Ideal para dispositivos nuevos.</p>
+            <div class="card-tag" style="color: #10B981;">v2.6</div>
+        </a>
+
+        <!-- Web Flasher -->
+        <a href="/br/flasher" class="card" style="border-color: rgba(99, 102, 241, 0.3);">
+            <div class="card-icon" style="background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2);">⚡</div>
+            <h3 class="card-title">Flasheador Web</h3>
+            <p class="card-desc">Quema el firmware del ESP32 directamente desde tu navegador vía USB-Serial. Sin instalar software local.</p>
+            <div class="card-tag">Flasher</div>
+        </a>
+
+        <!-- Command Center -->
+        <a href="/br/admin" class="card">
+            <div class="status-dot"></div>
+            <div class="card-icon">⚡</div>
+            <h3 class="card-title">Command Center</h3>
+            <p class="card-desc">Panel de control en tiempo real, logs en vivo y telemetría avanzada del dispositivo.</p>
+            <div class="card-tag">Control</div>
+        </a>
+
+        <!-- Test Panel -->
+        <a href="/br/test" class="card">
+            <div class="card-icon">🧪</div>
+            <h3 class="card-title">Panel de Pruebas</h3>
+            <p class="card-desc">Herramientas de diagnóstico, triggers de voz y validación de protocolos binarios.</p>
+            <div class="card-tag">Debug</div>
+        </a>
+
+        <!-- Kanban -->
+        <a href="/br/docs/kanban.html" class="card">
+            <div class="card-icon">📡</div>
+            <h3>Estado del Sistema</h3>
+            <p id="net-info">Detectando dirección IP...</p>
+            <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 10px;">v2.8: Web Serial API + Serial USB + Micrófono | Ganancia micro: 50 | VAD: 0.015</p>
+        </a>
+
+        <!-- Sonic Config -->
+        <a href="/scripts/sonic_wifi_config.html" class="card">
+            <div class="card-icon">📶</div>
+            <h3 class="card-title">Configuración Acústica</h3>
+            <p class="card-desc">Provisionamiento WiFi mediante protocolos sónicos (Sonic Transfer).</p>
+            <div class="card-tag">Herramientas</div>
+        </a>
+
+        <!-- System Docs -->
+        <a href="/br/docs/mebot_system.html" class="card">
+            <div class="card-icon">📚</div>
+            <h3 class="card-title">Documentación</h3>
+            <p class="card-desc">Guía técnica de arquitectura, hardware M5Stack y flujos de integración.</p>
+            <div class="card-tag">Info</div>
+        </a>
+
+        <!-- Fleet Dashboard -->
+        <a href="/br/fleet" class="card">
+            <div class="card-icon">🚀</div>
+            <h3 class="card-title">Fleet Dashboard</h3>
+            <p class="card-desc">Monitor multi-dispositivo: estado de flota, métricas agregadas y control centralizado v2.7.0.</p>
+            <div class="card-tag">Flota</div>
+        </a>
+    </div>
+
+    <footer class="footer">
+        MeBot Ecosystem &copy; 2026 | Bridge v2.8 | <span class="version">Build 34</span>
+    </footer>
+
+    <script>
+        // Efecto sutil de seguimiento de mouse en las tarjetas
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+        async function updateNet() {
+            try {
+                const res = await fetch('/api/network');
+                const data = await res.json();
+                document.getElementById('net-info').innerHTML = `
+                    <strong>IP:</strong> ${data.local_ip}<br>
+                    <strong>Puerto:</strong> ${data.port}<br>
+                    <span style="color:var(--accent)">Estatus: Operativo</span>
+                `;
+            } catch(e) {
+                document.getElementById('net-info').textContent = 'Bridge Desconectado';
+            }
+        }
+        updateNet();
+        setInterval(updateNet, 10000);
+    </script>
+</body>
+</html>
